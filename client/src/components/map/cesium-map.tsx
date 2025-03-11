@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as Cesium from "cesium";
-import { initializeCesium, osmProvider } from "@/lib/cesium-config";
+import { initializeCesium } from "@/lib/cesium-config";
 
 interface CesiumMapProps {
   baseLayer: string;
@@ -28,9 +28,17 @@ export function CesiumMap({ baseLayer }: CesiumMapProps) {
         sceneModePicker: false,
         geocoder: false,
         scene3DOnly: true,
-        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-        imageryProvider: osmProvider
+        terrainProvider: new Cesium.EllipsoidTerrainProvider()
       });
+
+      // Add default imagery layer
+      viewer.scene.globe.enableLighting = false;
+      viewer.scene.globe.baseColor = Cesium.Color.WHITE;
+
+      const provider = new Cesium.TileMapServiceImageryProvider({
+        url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+      });
+      viewer.imageryLayers.addImageryProvider(provider);
 
       // Set default view
       viewer.camera.setView({

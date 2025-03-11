@@ -1,15 +1,16 @@
 import { useEffect, useRef } from "react";
 import * as Cesium from "cesium";
 import { initializeCesium } from "@/lib/cesium-config";
-import { addSarImageryToViewer, zoomToBoundingBox } from "@/lib/map-utils";
+import { addSarImageryToViewer, zoomToBoundingBox, displayImageFootprints } from "@/lib/map-utils";
 import type { SarImage } from "@shared/schema";
 
 interface CesiumMapProps {
   baseLayer: string;
   selectedImage: SarImage | null;
+  searchResults?: SarImage[];
 }
 
-export function CesiumMap({ baseLayer, selectedImage }: CesiumMapProps) {
+export function CesiumMap({ baseLayer, selectedImage, searchResults = [] }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
   const currentImageLayerRef = useRef<Cesium.ImageryLayer | null>(null);
@@ -82,6 +83,17 @@ export function CesiumMap({ baseLayer, selectedImage }: CesiumMapProps) {
       }
     }
   }, [selectedImage]);
+
+  // Handle search results changes
+  useEffect(() => {
+    if (!viewerRef.current || !searchResults?.length) return;
+
+    try {
+      displayImageFootprints(viewerRef.current, searchResults);
+    } catch (error) {
+      console.error('Error displaying image footprints:', error);
+    }
+  }, [searchResults]);
 
   return <div ref={containerRef} className="w-full h-full absolute inset-0" />;
 }

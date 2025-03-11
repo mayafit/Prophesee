@@ -52,6 +52,7 @@ export default function MapView() {
       <CesiumMap 
         baseLayer={baseLayer} 
         selectedImage={selectedImage}
+        searchResults={searchResults}
       />
 
       {/* Top Bar Controls */}

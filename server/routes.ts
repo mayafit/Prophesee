@@ -3,8 +3,15 @@ import { createServer } from "http";
 import { storage } from "./storage";
 import { sarQuerySchema } from "@shared/schema";
 import { ZodError } from "zod";
+import express from "express";
+import path from "path";
 
 export async function registerRoutes(app: Express) {
+  // Serve Cesium's static assets from node_modules
+  app.use('/Build/Cesium', express.static(
+    path.join(process.cwd(), 'node_modules', 'cesium', 'Build', 'Cesium')
+  ));
+
   app.get("/api/sar-images", async (req, res) => {
     try {
       const query = sarQuerySchema.parse({

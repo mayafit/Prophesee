@@ -39,8 +39,9 @@ export function CesiumMap({ baseLayer, selectedImage }: CesiumMapProps) {
       viewer.scene.globe.enableLighting = false;
       viewer.scene.globe.baseColor = Cesium.Color.WHITE;
 
-      const provider = new Cesium.TileMapServiceImageryProvider({
-        url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+      // Use OpenStreetMap as default base layer which is more reliable
+      const provider = new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://a.tile.openstreetmap.org/'
       });
       viewer.imageryLayers.addImageryProvider(provider);
 

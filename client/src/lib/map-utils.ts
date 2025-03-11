@@ -1,97 +1,111 @@
-import * as Cesium from "cesium";
-import type { SarImage } from "@shared/schema";
 
+import * as Cesium from "cesium";
+import { SarImage } from "@shared/schema";
+
+// Initialize Cesium configuration
+export function initializeCesium() {
+  // Set the Cesium Ion access token
+  Cesium.Ion.defaultAccessToken = 'your-access-token-here';
+
+  // Configure Cesium to use local assets
+  window.CESIUM_BASE_URL = '/cesium/';
+}
+
+// Add a SAR image as an imagery layer to the Cesium viewer
 export function addSarImageryToViewer(
   viewer: Cesium.Viewer,
-  image: SarImage
+  sarImage: SarImage
 ): Cesium.ImageryLayer {
-  const [west, south, east, north] = image.bbox;
-  
-  const provider = new Cesium.SingleTileImageryProvider({
-    url: image.url,
-    rectangle: Cesium.Rectangle.fromDegrees(west, south, east, north),
-  });
-
-  return viewer.imageryLayers.addImageryProvider(provider);
-}
-
-export function zoomToBbox(
-  viewer: Cesium.Viewer,
-  bbox: [number, number, number, number]
-) {
-  const [west, south, east, north] = bbox;
-  const rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
-  viewer.camera.flyTo({
-    destination: rectangle,
-    duration: 1.5,
-  });
-}
-import * as Cesium from 'cesium';
-import { type SarImage } from '@shared/schema';
-
-// Function to add SAR imagery layer to Cesium viewer
-export function addSarImageryToViewer(viewer: Cesium.Viewer, sarImage: SarImage) {
-  if (!sarImage || !sarImage.bbox) {
-    console.warn('Invalid SAR image data', sarImage);
-    return;
-  }
-
-  // Remove any existing SAR imagery layers
-  viewer.imageryLayers.getLayers().forEach(layer => {
-    if (layer.name === 'sar-imagery') {
-      viewer.imageryLayers.remove(layer);
-    }
-  });
-
-  // Extract bounding box coordinates
-  const [west, south, east, north] = sarImage.bbox;
-  
-  // Create rectangle for the imagery
-  const rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
-  
-  // Add new layer with single tile imagery provider
-  const layer = viewer.imageryLayers.addImageryProvider(
-    new Cesium.SingleTileImageryProvider({
-      url: sarImage.url || 'https://cesium.com/docs/tutorials/creating-entities/images/Cesium_Logo_overlay.png', // Fallback to a placeholder if no URL
-      rectangle: rectangle,
-      tileWidth: 256, // Required parameter that was missing
-      tileHeight: 256  // Required parameter that was missing
-    })
+  // Convert the bounding box to Cesium rectangle
+  const rectangle = Cesium.Rectangle.fromDegrees(
+    sarImage.bbox[0], // west
+    sarImage.bbox[1], // south
+    sarImage.bbox[2], // east
+    sarImage.bbox[3]  // north
   );
-  
-  layer.name = 'sar-imagery';
-  
-  // Fly to the location of the SAR image
-  viewer.camera.flyTo({
-    destination: Cesium.Rectangle.fromDegrees(west, south, east, north),
-    duration: 1.5
+
+  // Create an imagery provider for the SAR image
+  const provider = new Cesium.SingleTileImageryProvider({
+    url: sarImage.url,
+    rectangle: rectangle
   });
+
+  // Add the imagery provider to the viewer's layers
+  const layer = viewer.imageryLayers.addImageryProvider(provider);
   
+  // Set any layer properties here (e.g., alpha, brightness)
+  layer.alpha = 0.7;
+
   return layer;
 }
 
-// Function to setup base layers
-export function setupBaseLayers(viewer: Cesium.Viewer, baseLayer: string) {
-  // Remove existing base layers
-  while (viewer.imageryLayers.length > 0) {
-    viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+// Remove a SAR imagery layer from the viewer
+export function removeSarImageryFromViewer(
+  viewer: Cesium.Viewer,
+  layer: Cesium.ImageryLayer
+): void {
+  if (layer) {
+    viewer.imageryLayers.remove(layer);
   }
-  
-  // Add the selected base layer
-  switch (baseLayer) {
+}
+
+// Set up different base map layers
+export function setBaseMapLayer(
+  viewer: Cesium.Viewer,
+  layerType: string
+): void {
+  // Remove all existing imagery layers
+  viewer.imageryLayers.removeAll();
+
+  // Add the appropriate base layer based on layerType
+  switch (layerType) {
     case 'osm':
-      viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://a.tile.openstreetmap.org/'
-      }));
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.OpenStreetMapImageryProvider({
+          url: 'https://a.tile.openstreetmap.org/'
+        })
+      );
+      break;
+    case 'bing':
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.BingMapsImageryProvider({
+          url: 'https://dev.virtualearth.net',
+          key: 'your-bing-maps-key-here',
+          mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
+        })
+      );
       break;
     case 'esri':
-      viewer.imageryLayers.addImageryProvider(new Cesium.ArcGisMapServerImageryProvider({
-        url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-      }));
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.ArcGisMapServerImageryProvider({
+          url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+        })
+      );
       break;
     default:
-      viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://a.tile.openstreetmap.org/'
-      }));
+      // Default to natural earth
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.TileMapServiceImageryProvider({
+          url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+        })
+      );
   }
+}
+
+// Zoom to a specific bounding box
+export function zoomToBoundingBox(
+  viewer: Cesium.Viewer,
+  bbox: number[]
+): void {
+  const rectangle = Cesium.Rectangle.fromDegrees(
+    bbox[0], // west
+    bbox[1], // south
+    bbox[2], // east
+    bbox[3]  // north
+  );
+  
+  viewer.camera.flyTo({
+    destination: rectangle,
+    duration: 1.5
+  });
 }

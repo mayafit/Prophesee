@@ -3,15 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { sarQuerySchema, type SarImage } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { 
+  Button, 
+  TextField, 
+  Typography, 
+  Card, 
+  CardContent,
+  Skeleton,
+  Box
+} from "@mui/material";
+import { Search as SearchIcon } from "@mui/icons-material";
 
 export function SarQuery() {
-  const { toast } = useToast();
   const [queryParams, setQueryParams] = useState<any>(null);
 
   const form = useForm({
@@ -33,59 +36,82 @@ export function SarQuery() {
   }
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold">SAR Image Query</h3>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+    <Box sx={{ color: 'white' }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        SAR Image Query
+      </Typography>
 
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <TextField
+          fullWidth
+          type="date"
+          label="Start Date"
+          {...form.register("startDate")}
+          sx={{
+            mb: 2,
+            input: { color: 'white' },
+            label: { color: 'white' },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.23)' },
+            }
+          }}
+        />
 
-          <Button type="submit" className="w-full">
-            Search Images
-          </Button>
-        </form>
-      </Form>
+        <TextField
+          fullWidth
+          type="date"
+          label="End Date"
+          {...form.register("endDate")}
+          sx={{
+            mb: 2,
+            input: { color: 'white' },
+            label: { color: 'white' },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.23)' },
+            }
+          }}
+        />
 
-      <div className="space-y-2">
+        <Button 
+          type="submit"
+          variant="contained"
+          fullWidth
+          startIcon={<SearchIcon />}
+          sx={{ mt: 2 }}
+        >
+          Search Images
+        </Button>
+      </form>
+
+      <Box sx={{ mt: 4 }}>
         {isLoading && (
-          <Card className="p-4">
-            <Skeleton className="h-20 w-full" />
+          <Card sx={{ mb: 2, bgcolor: 'rgba(30, 41, 59, 0.8)' }}>
+            <CardContent>
+              <Skeleton variant="rectangular" height={80} />
+            </CardContent>
           </Card>
         )}
-        
+
         {sarImages?.map((image) => (
-          <Card key={image.id} className="p-4">
-            <p className="font-medium">{image.imageId}</p>
-            <p className="text-sm text-muted-foreground">
-              {new Date(image.timestamp).toLocaleDateString()}
-            </p>
+          <Card 
+            key={image.id} 
+            sx={{ 
+              mb: 2, 
+              bgcolor: 'rgba(30, 41, 59, 0.8)',
+              color: 'white'
+            }}
+          >
+            <CardContent>
+              <Typography variant="subtitle1">
+                {image.imageId}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                {new Date(image.timestamp).toLocaleDateString()}
+              </Typography>
+            </CardContent>
           </Card>
         ))}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

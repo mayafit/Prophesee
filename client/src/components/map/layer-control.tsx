@@ -1,5 +1,4 @@
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Radio, RadioGroup, FormControlLabel, Typography } from "@mui/material";
 
 interface LayerControlProps {
   currentLayer: string;
@@ -8,21 +7,26 @@ interface LayerControlProps {
 
 export function LayerControl({ currentLayer, onLayerChange }: LayerControlProps) {
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Base Layer</h3>
+    <div>
+      <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+        Base Layer
+      </Typography>
       <RadioGroup
         value={currentLayer}
-        onValueChange={onLayerChange}
-        className="space-y-2"
+        onChange={(e) => onLayerChange(e.target.value)}
       >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="osm" id="osm" />
-          <Label htmlFor="osm">OpenStreetMap</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="bing" id="bing" />
-          <Label htmlFor="bing">Bing Satellite</Label>
-        </div>
+        <FormControlLabel 
+          value="osm" 
+          control={<Radio sx={{ color: 'white' }} />} 
+          label="OpenStreetMap" 
+          sx={{ color: 'white' }}
+        />
+        <FormControlLabel 
+          value="bing" 
+          control={<Radio sx={{ color: 'white' }} />} 
+          label="Bing Satellite" 
+          sx={{ color: 'white' }}
+        />
       </RadioGroup>
     </div>
   );

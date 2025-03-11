@@ -15,9 +15,26 @@ export default function MapView() {
   const [selectedImage, setSelectedImage] = useState<SarImage | null>(null);
   const [searchParams, setSearchParams] = useState<any>(null);
 
-  const { data: searchResults = [] } = useQuery<SarImage[]>({
+  const { data: searchResults = [], isLoading } = useQuery<SarImage[]>({
     queryKey: ['/api/sar-images', searchParams],
-    enabled: !!searchParams
+    enabled: !!searchParams,
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: searchParams.startDate,
+        endDate: searchParams.endDate,
+        limit: searchParams.limit.toString()
+      });
+
+      if (searchParams.bbox) {
+        params.append('bbox', JSON.stringify(searchParams.bbox));
+      }
+
+      const response = await fetch(`/api/sar-images?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch SAR images');
+      }
+      return response.json();
+    }
   });
 
   const handleImageSelect = (image: SarImage) => {
@@ -76,7 +93,7 @@ export default function MapView() {
           }
         }}
       >
-        <div className="p-6 space-y-6 text-white">
+        <div className="p-6 space-y-6">
           <LayerControl
             currentLayer={baseLayer}
             onLayerChange={setBaseLayer}

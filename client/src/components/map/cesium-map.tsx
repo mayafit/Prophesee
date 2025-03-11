@@ -73,8 +73,12 @@ export function CesiumMap({ baseLayer, selectedImage }: CesiumMapProps) {
 
     // Add new image layer if an image is selected
     if (selectedImage) {
-      currentImageLayerRef.current = addSarImageryToViewer(viewerRef.current, selectedImage);
-      zoomToBbox(viewerRef.current, selectedImage.bbox);
+      try {
+        currentImageLayerRef.current = addSarImageryToViewer(viewerRef.current, selectedImage);
+        zoomToBbox(viewerRef.current, selectedImage.bbox);
+      } catch (error) {
+        console.error('Error adding SAR imagery to viewer:', error);
+      }
     }
   }, [selectedImage]);
 

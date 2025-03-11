@@ -28,12 +28,13 @@ export function CesiumMap({ baseLayer }: CesiumMapProps) {
         sceneModePicker: false,
         geocoder: false,
         scene3DOnly: true,
+        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
         imageryProvider: osmProvider
       });
 
-      // Set initial view
+      // Set default view
       viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(0, 20, 10000000.0)
+        destination: Cesium.Cartesian3.fromDegrees(0, 0, 20000000.0)
       });
 
       viewerRef.current = viewer;

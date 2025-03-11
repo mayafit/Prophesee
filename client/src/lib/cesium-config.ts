@@ -7,9 +7,7 @@ export function initializeCesium() {
 }
 
 // Create OpenStreetMap provider
-export const osmProvider = new Cesium.UrlTemplateImageryProvider({
-  url: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  minimumLevel: 0,
-  maximumLevel: 19,
-  credit: "© OpenStreetMap contributors"
+export const osmProvider = new Cesium.OpenStreetMapImageryProvider({
+  url: "https://tile.openstreetmap.org/",
+  enablePickFeatures: false
 });

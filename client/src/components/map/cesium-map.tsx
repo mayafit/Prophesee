@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Cesium from "cesium";
 import { initializeCesium } from "@/lib/cesium-config";
-import { addSarImageryToViewer, zoomToBbox } from "@/lib/map-utils";
+import { addSarImageryToViewer, zoomToBoundingBox } from "@/lib/map-utils";
 import type { SarImage } from "@shared/schema";
 
 interface CesiumMapProps {
@@ -76,7 +76,7 @@ export function CesiumMap({ baseLayer, selectedImage }: CesiumMapProps) {
     if (selectedImage) {
       try {
         currentImageLayerRef.current = addSarImageryToViewer(viewerRef.current, selectedImage);
-        zoomToBbox(viewerRef.current, selectedImage.bbox);
+        zoomToBoundingBox(viewerRef.current, selectedImage.bbox);
       } catch (error) {
         console.error('Error adding SAR imagery to viewer:', error);
       }

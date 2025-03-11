@@ -28,18 +28,12 @@ export function CesiumMap({ baseLayer }: CesiumMapProps) {
         sceneModePicker: false,
         geocoder: false,
         scene3DOnly: true,
-        imageryProvider: osmProvider,
-        terrainProvider: new Cesium.EllipsoidTerrainProvider()
+        imageryProvider: osmProvider
       });
 
-      // Set initial view to a reasonable zoom level
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(0, 20, 20000000),
-        orientation: {
-          heading: 0.0,
-          pitch: -1.57,
-          roll: 0.0
-        }
+      // Set initial view
+      viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(0, 20, 10000000.0)
       });
 
       viewerRef.current = viewer;

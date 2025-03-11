@@ -4,6 +4,7 @@ import { LayerControl } from "@/components/map/layer-control";
 import { SarQuery } from "@/components/search/sar-query";
 import { Paper, IconButton, Drawer } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
+import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 
 export default function MapView() {
   const [baseLayer, setBaseLayer] = useState("osm");
@@ -13,8 +14,9 @@ export default function MapView() {
     <div className="h-screen w-full relative bg-background">
       <CesiumMap baseLayer={baseLayer} />
 
-      {/* Floating Controls */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Top Bar Controls */}
+      <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-4 z-10">
+        {/* Left side menu button */}
         <IconButton 
           onClick={() => setDrawerOpen(true)}
           sx={{ 
@@ -27,6 +29,11 @@ export default function MapView() {
         >
           <MenuIcon />
         </IconButton>
+
+        {/* Right side prophet icon */}
+        <div className="mt-1">
+          <TechProphetIcon />
+        </div>
       </div>
 
       {/* Side Panel */}

@@ -12,5 +12,7 @@ export function initializeCesium() {
 
 // Create OpenStreetMap provider
 export const osmProvider = new Cesium.OpenStreetMapImageryProvider({
-  url: "https://tile.openstreetmap.org/"
+  url: "https://tile.openstreetmap.org/",
+  credit: "© OpenStreetMap contributors",
+  enablePickFeatures: false
 });

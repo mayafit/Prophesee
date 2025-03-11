@@ -12,25 +12,43 @@ export class MemStorage implements IStorage {
   constructor() {
     this.sarImages = new Map();
     this.currentId = 1;
+
+    // Add some test data
+    this.insertSarImage({
+      imageId: "SAR_001",
+      timestamp: new Date("2024-03-10").toISOString(),
+      bbox: [10.5, 45.5, 12.5, 47.5],
+      metadata: { satellite: "Capella-1" },
+      url: "https://example.com/sar_001.tif"
+    });
+
+    this.insertSarImage({
+      imageId: "SAR_002",
+      timestamp: new Date("2024-03-11").toISOString(),
+      bbox: [-74.006, 40.7128, -73.95, 40.7528],
+      metadata: { satellite: "Capella-2" },
+      url: "https://example.com/sar_002.tif"
+    });
   }
 
   async getSarImages(query: SarQuery): Promise<SarImage[]> {
+    console.log("Searching SAR images with query:", query);
     const images = Array.from(this.sarImages.values());
     return images.filter(img => {
       const imgDate = new Date(img.timestamp);
       const start = new Date(query.startDate);
       const end = new Date(query.endDate);
-      
+
       if (imgDate < start || imgDate > end) return false;
-      
+
       if (query.bbox) {
         const [minX, minY, maxX, maxY] = query.bbox;
         const [imgMinX, imgMinY, imgMaxX, imgMaxY] = img.bbox;
-        
+
         if (minX > imgMaxX || maxX < imgMinX) return false;
         if (minY > imgMaxY || maxY < imgMinY) return false;
       }
-      
+
       return true;
     }).slice(0, query.limit);
   }

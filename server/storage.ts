@@ -13,10 +13,10 @@ export class MemStorage implements IStorage {
     this.sarImages = new Map();
     this.currentId = 1;
 
-    // Add some test data
+    // Add test data with dates in a reasonable range
     this.insertSarImage({
       imageId: "SAR_001",
-      timestamp: new Date("2024-03-10").toISOString(),
+      timestamp: new Date("2024-03-10T10:30:00Z").toISOString(),
       bbox: [10.5, 45.5, 12.5, 47.5],
       metadata: { satellite: "Capella-1" },
       url: "https://example.com/sar_001.tif"
@@ -24,23 +24,48 @@ export class MemStorage implements IStorage {
 
     this.insertSarImage({
       imageId: "SAR_002",
-      timestamp: new Date("2024-03-11").toISOString(),
+      timestamp: new Date("2024-03-11T14:20:00Z").toISOString(),
       bbox: [-74.006, 40.7128, -73.95, 40.7528],
       metadata: { satellite: "Capella-2" },
       url: "https://example.com/sar_002.tif"
+    });
+
+    this.insertSarImage({
+      imageId: "SAR_003",
+      timestamp: new Date("2024-03-11T08:15:00Z").toISOString(),
+      bbox: [-118.2437, 34.0522, -118.2037, 34.0922],
+      metadata: { satellite: "Capella-1" },
+      url: "https://example.com/sar_003.tif"
     });
   }
 
   async getSarImages(query: SarQuery): Promise<SarImage[]> {
     console.log("Searching SAR images with query:", query);
+
+    const startDate = new Date(query.startDate);
+    const endDate = new Date(query.endDate);
+
+    console.log("Date range:", {
+      start: startDate.toISOString(),
+      end: endDate.toISOString()
+    });
+
     const images = Array.from(this.sarImages.values());
-    return images.filter(img => {
+    const filteredImages = images.filter(img => {
       const imgDate = new Date(img.timestamp);
-      const start = new Date(query.startDate);
-      const end = new Date(query.endDate);
+      console.log("Comparing image date:", {
+        imageId: img.imageId,
+        imageDate: imgDate.toISOString(),
+        isAfterStart: imgDate >= startDate,
+        isBeforeEnd: imgDate <= endDate
+      });
 
-      if (imgDate < start || imgDate > end) return false;
+      // Check date range
+      if (imgDate < startDate || imgDate > endDate) {
+        return false;
+      }
 
+      // Check bounding box if provided
       if (query.bbox) {
         const [minX, minY, maxX, maxY] = query.bbox;
         const [imgMinX, imgMinY, imgMaxX, imgMaxY] = img.bbox;
@@ -50,7 +75,10 @@ export class MemStorage implements IStorage {
       }
 
       return true;
-    }).slice(0, query.limit);
+    });
+
+    console.log("Found matching images:", filteredImages.length);
+    return filteredImages.slice(0, query.limit);
   }
 
   async insertSarImage(image: InsertSarImage): Promise<SarImage> {

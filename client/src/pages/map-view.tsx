@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CesiumMap } from "@/components/map/cesium-map";
 import { LayerControl } from "@/components/map/layer-control";
+import { LayersPanel } from "@/components/map/layers-panel";
 import { SarQuery } from "@/components/search/sar-query";
 import { SearchResultsTable } from "@/components/search/search-results-table";
 import { IconButton, Drawer } from "@mui/material";
@@ -13,6 +14,8 @@ export default function MapView() {
   const [baseLayer, setBaseLayer] = useState("osm");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<SarImage | null>(null);
+  const [activeLayers, setActiveLayers] = useState<SarImage[]>([]);
+  const [visibleLayers, setVisibleLayers] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
 
   const { data: searchResults = [], isLoading } = useQuery<SarImage[]>({
@@ -45,6 +48,41 @@ export default function MapView() {
 
   const handleImageSelect = (image: SarImage) => {
     setSelectedImage(image);
+    
+    // Check if this image is already in active layers
+    const isAlreadyAdded = activeLayers.some(layer => layer.id === image.id);
+    
+    if (!isAlreadyAdded) {
+      // Add to active layers
+      setActiveLayers(prev => [...prev, image]);
+      // Make it visible
+      setVisibleLayers(prev => {
+        const newSet = new Set(prev);
+        newSet.add(image.id);
+        return newSet;
+      });
+    }
+  };
+  
+  const handleRemoveLayer = (imageId: number) => {
+    setActiveLayers(prev => prev.filter(layer => layer.id !== imageId));
+    setVisibleLayers(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(imageId);
+      return newSet;
+    });
+  };
+  
+  const handleToggleLayerVisibility = (imageId: number) => {
+    setVisibleLayers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(imageId)) {
+        newSet.delete(imageId);
+      } else {
+        newSet.add(imageId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -53,7 +91,19 @@ export default function MapView() {
         baseLayer={baseLayer} 
         selectedImage={selectedImage}
         searchResults={searchResults}
+        activeLayers={activeLayers}
+        visibleLayers={visibleLayers}
       />
+      
+      {/* Layers Panel */}
+      {activeLayers.length > 0 && (
+        <LayersPanel 
+          activeLayers={activeLayers}
+          onRemoveLayer={handleRemoveLayer}
+          onToggleVisibility={handleToggleLayerVisibility}
+          visibleLayers={visibleLayers}
+        />
+      )}
 
       {/* Top Bar Controls */}
       <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-4 z-10">

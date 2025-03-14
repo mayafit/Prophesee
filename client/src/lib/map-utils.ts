@@ -23,27 +23,70 @@ export function addSarImageryToViewer(
   // Create an imagery provider for the SAR image
   const provider = new Cesium.SingleTileImageryProvider({
     url: sarImage.url,
-    rectangle: rectangle,
-    tileWidth: 256,
-    tileHeight: 256
+    rectangle: rectangle
   });
 
   // Add the imagery provider to the viewer's layers
   const layer = viewer.imageryLayers.addImageryProvider(provider);
 
-  // Set any layer properties here (e.g., alpha, brightness)
+  // Set layer properties
   layer.alpha = 0.7;
+
+  // Set custom properties to identify this layer
+  // @ts-ignore - adding custom property
+  layer.sarImageId = sarImage.id;
+  // @ts-ignore - adding custom property
+  layer.sarImageName = sarImage.imageId;
 
   return layer;
 }
 
-// Remove a SAR imagery layer from the viewer
-export function removeSarImageryFromViewer(
+// Remove a specific SAR layer by ID
+export function removeSarLayer(
   viewer: Cesium.Viewer,
-  layer: Cesium.ImageryLayer
-): void {
-  if (layer) {
-    viewer.imageryLayers.remove(layer);
+  imageId: number
+): boolean {
+  let removed = false;
+
+  // Find and remove the layer with this ID
+  for (let i = 0; i < viewer.imageryLayers.length; i++) {
+    const layer = viewer.imageryLayers.get(i);
+    // @ts-ignore - accessing custom property
+    if (layer.sarImageId === imageId) {
+      viewer.imageryLayers.remove(layer);
+      removed = true;
+      break;
+    }
+  }
+
+  return removed;
+}
+
+// Toggle a SAR layer (add if not present, remove if present)
+export function toggleSarLayer(
+  viewer: Cesium.Viewer,
+  sarImage: SarImage
+): { added: boolean, layer?: Cesium.ImageryLayer } {
+  // First check if this layer already exists
+  let existingLayer: Cesium.ImageryLayer | undefined;
+
+  for (let i = 0; i < viewer.imageryLayers.length; i++) {
+    const layer = viewer.imageryLayers.get(i);
+    // @ts-ignore - accessing custom property
+    if (layer.sarImageId === sarImage.id) {
+      existingLayer = layer;
+      break;
+    }
+  }
+
+  if (existingLayer) {
+    // Remove if it exists
+    viewer.imageryLayers.remove(existingLayer);
+    return { added: false };
+  } else {
+    // Add if it doesn't exist
+    const layer = addSarImageryToViewer(viewer, sarImage);
+    return { added: true, layer };
   }
 }
 

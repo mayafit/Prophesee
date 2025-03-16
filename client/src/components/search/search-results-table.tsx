@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { type SarImage } from "@shared/schema";
 import {
@@ -12,16 +11,23 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Eye, Plus, Layers } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Eye, Plus, Loader2, AlertCircle } from "lucide-react";
 
 interface SearchResultsTableProps {
   results: SarImage[];
   onImageSelect: (image: SarImage) => void;
   selectedImageId?: number;
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export function SearchResultsTable({ results, onImageSelect, selectedImageId }: SearchResultsTableProps) {
+export function SearchResultsTable({ 
+  results, 
+  onImageSelect, 
+  selectedImageId,
+  isLoading,
+  error 
+}: SearchResultsTableProps) {
   const [addedLayers, setAddedLayers] = useState<Set<number>>(new Set());
 
   const handleAddLayer = (image: SarImage, event: React.MouseEvent) => {
@@ -30,7 +36,6 @@ export function SearchResultsTable({ results, onImageSelect, selectedImageId }: 
     setAddedLayers(prev => new Set(prev).add(image.id));
   };
 
-  // Format coordinates to a readable string
   const formatLocation = (bbox: [number, number, number, number]) => {
     const centerLat = (bbox[1] + bbox[3]) / 2;
     const centerLon = (bbox[0] + bbox[2]) / 2;
@@ -52,53 +57,79 @@ export function SearchResultsTable({ results, onImageSelect, selectedImageId }: 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {results.map((image) => (
-              <TableRow 
-                key={image.id}
-                className={`cursor-pointer hover:bg-muted/50 ${
-                  selectedImageId === image.id ? 'bg-primary/10' : ''
-                }`}
-                onClick={() => onImageSelect(image)}
-              >
-                <TableCell className="font-mono">{image.imageId}</TableCell>
-                <TableCell>
-                  {format(new Date(image.timestamp), 'MMM d, yyyy HH:mm')}
-                </TableCell>
-                <TableCell>
-                  {formatLocation(image.bbox)}
-                </TableCell>
-                <TableCell>
-                  {image.metadata?.source || "Unknown"}
-                </TableCell>
-                <TableCell>
-                  {`${image.bbox[0].toFixed(2)}°W, ${image.bbox[3].toFixed(2)}°N to ${image.bbox[2].toFixed(2)}°E, ${image.bbox[1].toFixed(2)}°S`}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onImageSelect(image);
-                      }}
-                      title="View image"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleAddLayer(image, e)}
-                      title="Add as layer"
-                      className={addedLayers.has(image.id) ? "text-green-500" : ""}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Searching for SAR images...</span>
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2 text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Error: {error.message}</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : results.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No SAR images found matching your search criteria.
+                </TableCell>
+              </TableRow>
+            ) : (
+              results.map((image) => (
+                <TableRow 
+                  key={image.id}
+                  className={`cursor-pointer hover:bg-muted/50 ${
+                    selectedImageId === image.id ? 'bg-primary/10' : ''
+                  }`}
+                  onClick={() => onImageSelect(image)}
+                >
+                  <TableCell className="font-mono">{image.imageId}</TableCell>
+                  <TableCell>
+                    {format(new Date(image.timestamp), 'MMM d, yyyy HH:mm')}
+                  </TableCell>
+                  <TableCell>
+                    {formatLocation(image.bbox)}
+                  </TableCell>
+                  <TableCell>
+                    {image.metadata?.satellite || "Unknown"}
+                  </TableCell>
+                  <TableCell>
+                    {`${Math.abs(image.bbox[2] - image.bbox[0]).toFixed(2)}° × ${Math.abs(image.bbox[3] - image.bbox[1]).toFixed(2)}°`}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onImageSelect(image);
+                        }}
+                        title="View image"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleAddLayer(image, e)}
+                        title="Add as layer"
+                        className={addedLayers.has(image.id) ? "text-green-500" : ""}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

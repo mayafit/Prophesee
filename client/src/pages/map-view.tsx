@@ -9,7 +9,14 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
-import { PromptSearch } from "@/components/search/prompt-search"; // Added import
+import { PromptSearch } from "@/components/search/prompt-search";
+import { StatusLog } from "@/components/status/status-log";
+
+interface LogEntry {
+  timestamp: Date;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
 
 export default function MapView() {
   const [baseLayer, setBaseLayer] = useState("osm");
@@ -18,14 +25,19 @@ export default function MapView() {
   const [activeLayers, setActiveLayers] = useState<SarImage[]>([]);
   const [visibleLayers, setVisibleLayers] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
 
-  const { data: searchResults = [], isLoading } = useQuery<SarImage[]>({
+  const addLogEntry = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
+    setLogEntries(prev => [...prev, { timestamp: new Date(), message, type }]);
+  };
+
+  const { data: searchResults = [], isLoading, error } = useQuery<SarImage[]>({
     queryKey: ['/api/sar-images', searchParams],
     enabled: !!searchParams,
     queryFn: async () => {
       if (!searchParams) throw new Error('No search parameters');
 
-      console.log("Executing search with params:", searchParams);
+      addLogEntry(`Executing search with parameters: ${JSON.stringify(searchParams)}`, 'info');
 
       const params = new URLSearchParams({
         startDate: searchParams.startDate,
@@ -37,34 +49,44 @@ export default function MapView() {
         params.append('bbox', JSON.stringify(searchParams.bbox));
       }
 
-      const response = await fetch(`/api/sar-images?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch SAR images');
+      try {
+        const response = await fetch(`/api/sar-images?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch SAR images');
+        }
+        const data = await response.json();
+        addLogEntry(`Found ${data.length} images matching search criteria`, 'success');
+        return data;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        addLogEntry(`Search failed: ${errorMessage}`, 'error');
+        throw err;
       }
-      const data = await response.json();
-      console.log("Search results:", data);
-      return data;
     }
   });
 
+  const handleSearch = async (params: SarQueryType) => {
+    addLogEntry('Starting new search...', 'info');
+    setSearchParams(params);
+  };
+
   const handleImageSelect = (image: SarImage) => {
     setSelectedImage(image);
-    
-    // Check if this image is already in active layers
+    addLogEntry(`Selected image: ${image.imageId}`, 'info');
+
     const isAlreadyAdded = activeLayers.some(layer => layer.id === image.id);
-    
+
     if (!isAlreadyAdded) {
-      // Add to active layers
       setActiveLayers(prev => [...prev, image]);
-      // Make it visible
       setVisibleLayers(prev => {
         const newSet = new Set(prev);
         newSet.add(image.id);
         return newSet;
       });
+      addLogEntry(`Added image ${image.imageId} as new layer`, 'success');
     }
   };
-  
+
   const handleRemoveLayer = (imageId: number) => {
     setActiveLayers(prev => prev.filter(layer => layer.id !== imageId));
     setVisibleLayers(prev => {
@@ -72,8 +94,9 @@ export default function MapView() {
       newSet.delete(imageId);
       return newSet;
     });
+    addLogEntry(`Removed layer with ID: ${imageId}`, 'info');
   };
-  
+
   const handleToggleLayerVisibility = (imageId: number) => {
     setVisibleLayers(prev => {
       const newSet = new Set(prev);
@@ -84,6 +107,7 @@ export default function MapView() {
       }
       return newSet;
     });
+    addLogEntry(`Toggled visibility for layer ID: ${imageId}`, 'info');
   };
 
   return (
@@ -95,20 +119,19 @@ export default function MapView() {
         activeLayers={activeLayers}
         visibleLayers={visibleLayers}
       />
-      
-      {/* Layers Panel */}
-      {activeLayers.length > 0 && (
-        <LayersPanel 
-          activeLayers={activeLayers}
-          onRemoveLayer={handleRemoveLayer}
-          onToggleVisibility={handleToggleLayerVisibility}
-          visibleLayers={visibleLayers}
-        />
-      )}
 
-      {/* Top Bar Controls */}
+      <StatusLog entries={logEntries} />
+
+      {/* Search Results Table - Always visible */}
+      <SearchResultsTable
+        results={searchResults}
+        onImageSelect={handleImageSelect}
+        selectedImageId={selectedImage?.id}
+        isLoading={isLoading}
+        error={error}
+      />
+
       <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-4 z-10">
-        {/* Left side menu button */}
         <IconButton 
           onClick={() => setDrawerOpen(true)}
           sx={{ 
@@ -122,22 +145,20 @@ export default function MapView() {
           <MenuIcon />
         </IconButton>
 
-        {/* Right side prophet icon */}
         <div className="mt-1">
           <TechProphetIcon />
         </div>
       </div>
 
-      {/* Search Results Table */}
-      {searchResults.length > 0 && (
-        <SearchResultsTable
-          results={searchResults}
-          onImageSelect={handleImageSelect}
-          selectedImageId={selectedImage?.id}
+      {activeLayers.length > 0 && (
+        <LayersPanel 
+          activeLayers={activeLayers}
+          onRemoveLayer={handleRemoveLayer}
+          onToggleVisibility={handleToggleLayerVisibility}
+          visibleLayers={visibleLayers}
         />
       )}
 
-      {/* Side Panel */}
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -156,10 +177,10 @@ export default function MapView() {
             currentLayer={baseLayer}
             onLayerChange={setBaseLayer}
           />
-          <SarQuery onSearch={setSearchParams} />
+          <SarQuery onSearch={handleSearch} />
         </div>
       </Drawer>
-      <PromptSearch onSearch={setSearchParams} /> {/* Added PromptSearch component */}
+      <PromptSearch onSearch={handleSearch} />
     </div>
   );
 }

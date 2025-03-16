@@ -71,33 +71,21 @@ export function CesiumMap({
     }
   }, []);
 
-  // Keep track of all added layers
-  const [activeLayers, setActiveLayers] = useState<Map<number, Cesium.ImageryLayer>>(new Map());
-
   // Handle selected image changes
   useEffect(() => {
     if (!viewerRef.current || !selectedImage) return;
 
     try {
-      // Check if this layer already exists
-      if (!activeLayers.has(selectedImage.id)) {
-        // Add as a new layer
+      if (!activeLayers.some(layer => layer.id === selectedImage.id)) {
         const layer = addSarImageryToViewer(viewerRef.current, selectedImage);
-        
-        // Store the layer reference
-        setActiveLayers(prev => {
-          const newMap = new Map(prev);
-          newMap.set(selectedImage.id, layer);
-          return newMap;
-        });
       }
-      
+
       // Always zoom to the selected image
       zoomToBoundingBox(viewerRef.current, selectedImage.bbox);
     } catch (error) {
       console.error('Error adding SAR imagery to viewer:', error);
     }
-  }, [selectedImage]);
+  }, [selectedImage, activeLayers]);
 
   // Handle search results changes
   useEffect(() => {
@@ -109,18 +97,18 @@ export function CesiumMap({
       console.error('Error displaying image footprints:', error);
     }
   }, [searchResults]);
-  
+
   // Handle layer visibility changes
   useEffect(() => {
     if (!viewerRef.current) return;
-    
+
     try {
       // Update visibility of all layers
       for (let i = 0; i < viewerRef.current.imageryLayers.length; i++) {
         const layer = viewerRef.current.imageryLayers.get(i);
         // Skip the base layer
         if (i === 0) continue;
-        
+
         // @ts-ignore - accessing custom property
         const layerId = layer.sarImageId;
         if (layerId) {

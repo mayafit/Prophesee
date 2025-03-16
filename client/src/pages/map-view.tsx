@@ -9,6 +9,7 @@ import { Menu as MenuIcon } from "@mui/icons-material";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
+import { PromptSearch } from "@/components/search/prompt-search"; // Added import
 
 export default function MapView() {
   const [baseLayer, setBaseLayer] = useState("osm");
@@ -158,6 +159,7 @@ export default function MapView() {
           <SarQuery onSearch={setSearchParams} />
         </div>
       </Drawer>
+      <PromptSearch onSearch={setSearchParams} /> {/* Added PromptSearch component */}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { type SarImage } from "@shared/schema";
 import {
@@ -52,53 +51,61 @@ export function SearchResultsTable({ results, onImageSelect, selectedImageId }: 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {results.map((image) => (
-              <TableRow 
-                key={image.id}
-                className={`cursor-pointer hover:bg-muted/50 ${
-                  selectedImageId === image.id ? 'bg-primary/10' : ''
-                }`}
-                onClick={() => onImageSelect(image)}
-              >
-                <TableCell className="font-mono">{image.imageId}</TableCell>
-                <TableCell>
-                  {format(new Date(image.timestamp), 'MMM d, yyyy HH:mm')}
-                </TableCell>
-                <TableCell>
-                  {formatLocation(image.bbox)}
-                </TableCell>
-                <TableCell>
-                  {image.metadata?.source || "Unknown"}
-                </TableCell>
-                <TableCell>
-                  {`${image.bbox[0].toFixed(2)}°W, ${image.bbox[3].toFixed(2)}°N to ${image.bbox[2].toFixed(2)}°E, ${image.bbox[1].toFixed(2)}°S`}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onImageSelect(image);
-                      }}
-                      title="View image"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleAddLayer(image, e)}
-                      title="Add as layer"
-                      className={addedLayers.has(image.id) ? "text-green-500" : ""}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {results.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No results found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              results.map((image) => (
+                <TableRow 
+                  key={image.id}
+                  className={`cursor-pointer hover:bg-muted/50 ${
+                    selectedImageId === image.id ? 'bg-primary/10' : ''
+                  }`}
+                  onClick={() => onImageSelect(image)}
+                >
+                  <TableCell className="font-mono">{image.imageId}</TableCell>
+                  <TableCell>
+                    {format(new Date(image.timestamp), 'MMM d, yyyy HH:mm')}
+                  </TableCell>
+                  <TableCell>
+                    {formatLocation(image.bbox)}
+                  </TableCell>
+                  <TableCell>
+                    {image.metadata?.source || "Unknown"}
+                  </TableCell>
+                  <TableCell>
+                    {`${image.bbox[0].toFixed(2)}°W, ${image.bbox[3].toFixed(2)}°N to ${image.bbox[2].toFixed(2)}°E, ${image.bbox[1].toFixed(2)}°S`}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onImageSelect(image);
+                        }}
+                        title="View image"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleAddLayer(image, e)}
+                        title="Add as layer"
+                        className={addedLayers.has(image.id) ? "text-green-500" : ""}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

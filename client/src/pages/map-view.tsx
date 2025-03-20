@@ -129,7 +129,7 @@ export default function MapView() {
       </div>
 
       {/* Search Results Table */}
-      {searchResults.length > 0 && (
+      {searchParams && (
         <SearchResultsTable
           results={searchResults}
           onImageSelect={handleImageSelect}

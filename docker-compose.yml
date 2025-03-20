@@ -6,10 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "3000:5000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://prophesee:prophesee@db:5432/prophesee
+      - NASA_API_KEY=${NASA_API_KEY}
     depends_on:
       - db
     restart: unless-stopped

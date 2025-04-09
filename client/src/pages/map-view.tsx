@@ -9,9 +9,16 @@ import { Menu as MenuIcon, Satellite as SatelliteIcon, Layers as LayersIcon } fr
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
-import { PromptSearch } from "@/components/search/prompt-search";
 import { StatusLog } from "@/components/status/status-log";
 import { WmsSupplierPanel } from "@/components/map/wms-supplier-panel";
+
+// Toolbar Components
+import { Toolbar } from "@/components/toolbar/toolbar";
+import { ToolPanel } from "@/components/toolbar/tool-panel";
+import { LogPanel } from "@/components/toolbar/log-panel";
+import { SearchPanel } from "@/components/toolbar/search-panel";
+import { InfoPanel } from "@/components/toolbar/info-panel";
+import { SettingsPanel } from "@/components/toolbar/settings-panel";
 
 interface LogEntry {
   timestamp: Date;
@@ -28,6 +35,7 @@ export default function MapView() {
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [drawerTab, setDrawerTab] = useState(0); // 0 = search tab, 1 = WMS supplier tab
+  const [activeTool, setActiveTool] = useState<string | null>(null);
 
   const addLogEntry = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     setLogEntries(prev => [...prev, { timestamp: new Date(), message, type }]);
@@ -122,8 +130,6 @@ export default function MapView() {
         visibleLayers={visibleLayers}
       />
 
-      <StatusLog entries={logEntries} />
-
       {/* Search Results Table - Always visible */}
       <SearchResultsTable
         results={searchResults}
@@ -159,6 +165,55 @@ export default function MapView() {
           onToggleVisibility={handleToggleLayerVisibility}
           visibleLayers={visibleLayers}
         />
+      )}
+
+      {/* Toolbar */}
+      <Toolbar 
+        onToolSelect={(toolId) => setActiveTool(toolId === activeTool ? null : toolId)} 
+        activeTool={activeTool}
+      />
+      
+      {/* Tool Panels */}
+      {activeTool === 'logs' && (
+        <ToolPanel 
+          title="System Logs" 
+          onClose={() => setActiveTool(null)}
+        >
+          <LogPanel 
+            entries={logEntries} 
+            onClear={() => setLogEntries([])}
+          />
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'search' && (
+        <ToolPanel 
+          title="Natural Language Search" 
+          onClose={() => setActiveTool(null)}
+        >
+          <SearchPanel onSearch={handleSearch} />
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'info' && (
+        <ToolPanel 
+          title="Information" 
+          onClose={() => setActiveTool(null)}
+        >
+          <InfoPanel />
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'settings' && (
+        <ToolPanel 
+          title="Settings" 
+          onClose={() => setActiveTool(null)}
+        >
+          <SettingsPanel 
+            baseLayer={baseLayer}
+            onBaseLayerChange={setBaseLayer}
+          />
+        </ToolPanel>
       )}
 
       <Drawer
@@ -253,7 +308,6 @@ export default function MapView() {
           </div>
         </div>
       </Drawer>
-      <PromptSearch onSearch={handleSearch} />
     </div>
   );
 }

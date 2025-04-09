@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Cesium from "cesium";
 import { initializeCesium } from "@/lib/cesium-config";
-import { addSarImageryToViewer, zoomToBoundingBox, displayImageFootprints } from "@/lib/map-utils";
+import { addSarImageryToViewer, zoomToBoundingBox, displayImageFootprints, setBaseMapLayer } from "@/lib/map-utils";
 import type { SarImage } from "@shared/schema";
 
 interface CesiumMapProps {
@@ -48,11 +48,8 @@ export function CesiumMap({
       viewer.scene.globe.enableLighting = false;
       viewer.scene.globe.baseColor = Cesium.Color.WHITE;
 
-      // Use OpenStreetMap as default base layer which is more reliable
-      const provider = new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://a.tile.openstreetmap.org/'
-      });
-      viewer.imageryLayers.addImageryProvider(provider);
+      // Set the initial base layer
+      setBaseMapLayer(viewer, baseLayer || 'osm');
 
       // Set default view
       viewer.camera.setView({
@@ -97,6 +94,17 @@ export function CesiumMap({
       console.error('Error displaying image footprints:', error);
     }
   }, [searchResults]);
+
+  // Handle base layer changes
+  useEffect(() => {
+    if (!viewerRef.current) return;
+
+    try {
+      setBaseMapLayer(viewerRef.current, baseLayer);
+    } catch (error) {
+      console.error('Error changing base layer:', error);
+    }
+  }, [baseLayer]);
 
   // Handle layer visibility changes
   useEffect(() => {

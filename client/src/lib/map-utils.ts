@@ -1,6 +1,37 @@
 import * as Cesium from "cesium";
 import { SarImage } from "@shared/schema";
 
+// Add CESIUM_BASE_URL to window and extend Cesium type definitions
+declare global {
+  interface Window {
+    CESIUM_BASE_URL: string;
+  }
+  
+  // Add missing properties to Cesium provider types
+  namespace Cesium {
+    interface OpenStreetMapImageryProviderOptions {
+      url?: string;
+    }
+    
+    interface BingMapsImageryProviderOptions {
+      url?: string;
+    }
+    
+    interface ArcGisMapServerImageryProviderOptions {
+      url?: string;
+    }
+    
+    interface TileMapServiceImageryProviderOptions {
+      url?: string;
+    }
+    
+    interface ImageryLayer {
+      sarImageId?: number;
+      sarImageName?: string;
+    }
+  }
+}
+
 // Initialize Cesium configuration
 export function initializeCesium() {
   // Configure Cesium to use local assets
@@ -150,9 +181,17 @@ export function setBaseMapLayer(
   viewer: Cesium.Viewer,
   layerType: string
 ): void {
-  // Remove all existing imagery layers
+  // Remove all existing imagery layers but preserve other layers
+  const otherLayers: Cesium.ImageryLayer[] = [];
+  
+  // Save all non-base layers
+  for (let i = 1; i < viewer.imageryLayers.length; i++) {
+    otherLayers.push(viewer.imageryLayers.get(i));
+  }
+  
+  // Clear all layers
   viewer.imageryLayers.removeAll();
-
+  
   // Add the appropriate base layer based on layerType
   switch (layerType) {
     case 'osm':
@@ -166,7 +205,7 @@ export function setBaseMapLayer(
       viewer.imageryLayers.addImageryProvider(
         new Cesium.BingMapsImageryProvider({
           url: 'https://dev.virtualearth.net',
-          key: 'your-bing-maps-key-here',
+          key: '', // Would need valid key
           mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
         })
       );
@@ -178,6 +217,40 @@ export function setBaseMapLayer(
         })
       );
       break;
+    case 'nasa':
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.WebMapServiceImageryProvider({
+          url: 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi',
+          layers: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+          parameters: {
+            transparent: 'true',
+            format: 'image/png'
+          }
+        })
+      );
+      break;
+    case 'natural-earth':
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.TileMapServiceImageryProvider({
+          url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
+        })
+      );
+      break;
+    case 'terrain':
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.WebMapServiceImageryProvider({
+          url: 'https://ows.terrestris.de/osm/service',
+          layers: 'OSM-WMS',
+          parameters: {
+            transparent: 'true',
+            format: 'image/png'
+          }
+        })
+      );
+      break;
+    case 'blank':
+      // Just add an empty layer
+      break;
     default:
       // Default to natural earth
       viewer.imageryLayers.addImageryProvider(
@@ -185,5 +258,10 @@ export function setBaseMapLayer(
           url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
         })
       );
+  }
+  
+  // Restore the other layers in the same order
+  for (const layer of otherLayers) {
+    viewer.imageryLayers.add(layer);
   }
 }

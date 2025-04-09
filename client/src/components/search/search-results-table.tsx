@@ -43,14 +43,15 @@ export function SearchResultsTable({
   };
 
   return (
-    <Card className="absolute bottom-4 left-4 w-[900px] bg-background/95 backdrop-blur-sm border shadow-lg z-20">
+    <Card className="absolute bottom-4 left-4 w-[1100px] bg-background/95 backdrop-blur-sm border shadow-lg z-20">
       <div className="max-h-[400px] overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Date & Time</TableHead>
-              <TableHead>Location</TableHead>
+              <TableHead>Top-Left Coord</TableHead>
+              <TableHead>Bottom-Right Coord</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Extent</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -59,7 +60,7 @@ export function SearchResultsTable({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Searching for SAR images...</span>
@@ -68,7 +69,7 @@ export function SearchResultsTable({
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="flex items-center justify-center gap-2 text-destructive">
                     <AlertCircle className="h-4 w-4" />
                     <span>Error: {error.message}</span>
@@ -77,7 +78,7 @@ export function SearchResultsTable({
               </TableRow>
             ) : results.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No SAR images found matching your search criteria.
                 </TableCell>
               </TableRow>
@@ -94,11 +95,14 @@ export function SearchResultsTable({
                   <TableCell>
                     {format(new Date(image.timestamp), 'MMM d, yyyy HH:mm')}
                   </TableCell>
-                  <TableCell>
-                    {formatLocation(image.bbox)}
+                  <TableCell className="font-mono">
+                    {image.bbox[3].toFixed(4)}°N, {image.bbox[0].toFixed(4)}°E
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {image.bbox[1].toFixed(4)}°N, {image.bbox[2].toFixed(4)}°E
                   </TableCell>
                   <TableCell>
-                    {image.metadata?.satellite || "Unknown"}
+                    {image.metadata?.satellite || image.metadata?.source || "Unknown"}
                   </TableCell>
                   <TableCell>
                     {`${Math.abs(image.bbox[2] - image.bbox[0]).toFixed(2)}° × ${Math.abs(image.bbox[3] - image.bbox[1]).toFixed(2)}°`}
@@ -106,24 +110,27 @@ export function SearchResultsTable({
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button 
-                        variant="ghost" 
-                        size="icon" 
+                        variant="outline" 
+                        size="sm" 
                         onClick={(e) => {
                           e.stopPropagation();
                           onImageSelect(image);
                         }}
                         title="View image"
+                        className="flex items-center gap-1"
                       >
                         <Eye className="h-4 w-4" />
+                        <span>View</span>
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         onClick={(e) => handleAddLayer(image, e)}
                         title="Add as layer"
-                        className={addedLayers.has(image.id) ? "text-green-500" : ""}
+                        className={`flex items-center gap-1 ${addedLayers.has(image.id) ? "text-green-500 border-green-500" : ""}`}
                       >
                         <Plus className="h-4 w-4" />
+                        <span>Add Layer</span>
                       </Button>
                     </div>
                   </TableCell>

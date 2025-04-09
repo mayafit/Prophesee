@@ -30,7 +30,7 @@ export function CesiumMap({
       // Initialize Cesium configuration
       initializeCesium();
 
-      // Create viewer with minimal controls
+      // Create viewer with minimal controls and no default imagery
       const viewer = new Cesium.Viewer(containerRef.current, {
         baseLayerPicker: false,
         timeline: false,
@@ -44,11 +44,13 @@ export function CesiumMap({
         terrainProvider: new Cesium.EllipsoidTerrainProvider()
       });
 
-      // Add default imagery layer
+      // Customize globe appearance
       viewer.scene.globe.enableLighting = false;
+      viewer.scene.globe.showGroundAtmosphere = false;
       viewer.scene.globe.baseColor = Cesium.Color.WHITE;
-
-      // Set the initial base layer
+      viewer.scene.backgroundColor = Cesium.Color.WHITE;
+      
+      // Set the initial base layer (ensure it happens after configuration)
       setBaseMapLayer(viewer, baseLayer || 'osm');
 
       // Set default view

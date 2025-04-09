@@ -181,87 +181,86 @@ export function setBaseMapLayer(
   viewer: Cesium.Viewer,
   layerType: string
 ): void {
-  // Remove all existing imagery layers but preserve other layers
-  const otherLayers: Cesium.ImageryLayer[] = [];
-  
-  // Save all non-base layers
-  for (let i = 1; i < viewer.imageryLayers.length; i++) {
-    otherLayers.push(viewer.imageryLayers.get(i));
-  }
-  
-  // Clear all layers
-  viewer.imageryLayers.removeAll();
-  
-  // Add the appropriate base layer based on layerType
-  switch (layerType) {
-    case 'osm':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.OpenStreetMapImageryProvider({
-          url: 'https://a.tile.openstreetmap.org/'
-        })
-      );
-      break;
-    case 'bing':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.BingMapsImageryProvider({
-          url: 'https://dev.virtualearth.net',
-          key: '', // Would need valid key
-          mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-        })
-      );
-      break;
-    case 'esri':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.ArcGisMapServerImageryProvider({
+  try {
+    // Remove all existing imagery layers but preserve entity data
+    const otherLayers: Cesium.ImageryLayer[] = [];
+    
+    // Save all non-base layers for restoration
+    for (let i = 1; i < viewer.imageryLayers.length; i++) {
+      otherLayers.push(viewer.imageryLayers.get(i));
+    }
+    
+    // Clear all imagery layers
+    viewer.imageryLayers.removeAll();
+    
+    // Reset the globe base color to white (ensures no blue tint)
+    viewer.scene.globe.baseColor = Cesium.Color.WHITE;
+    
+    // Add the appropriate base layer based on layerType
+    let baseLayer: Cesium.ImageryProvider | null = null;
+    
+    switch (layerType) {
+      case 'osm':
+        baseLayer = new Cesium.OpenStreetMapImageryProvider({});
+        break;
+      case 'bing':
+        // Bing requires an API key, so we'll default to OSM if no key
+        baseLayer = new Cesium.OpenStreetMapImageryProvider({});
+        break;
+      case 'esri':
+        baseLayer = new Cesium.ArcGisMapServerImageryProvider({
           url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-        })
-      );
-      break;
-    case 'nasa':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.WebMapServiceImageryProvider({
+        });
+        break;
+      case 'nasa':
+        baseLayer = new Cesium.WebMapServiceImageryProvider({
           url: 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi',
           layers: 'MODIS_Terra_CorrectedReflectance_TrueColor',
           parameters: {
             transparent: 'true',
             format: 'image/png'
           }
-        })
-      );
-      break;
-    case 'natural-earth':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.TileMapServiceImageryProvider({
+        });
+        break;
+      case 'natural-earth':
+        baseLayer = new Cesium.TileMapServiceImageryProvider({
           url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
-        })
-      );
-      break;
-    case 'terrain':
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.WebMapServiceImageryProvider({
+        });
+        break;
+      case 'terrain':
+        baseLayer = new Cesium.WebMapServiceImageryProvider({
           url: 'https://ows.terrestris.de/osm/service',
           layers: 'OSM-WMS',
           parameters: {
             transparent: 'true',
             format: 'image/png'
           }
-        })
-      );
-      break;
-    case 'blank':
-      // Just add an empty layer
-      break;
-    default:
-      // Default to natural earth
-      viewer.imageryLayers.addImageryProvider(
-        new Cesium.TileMapServiceImageryProvider({
-          url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
-        })
-      );
-  }
-  
-  // Restore the other layers in the same order
-  for (const layer of otherLayers) {
-    viewer.imageryLayers.add(layer);
+        });
+        break;
+      case 'blank':
+        // Don't add a base layer
+        break;
+      default:
+        // Default to OpenStreetMap
+        baseLayer = new Cesium.OpenStreetMapImageryProvider({});
+    }
+
+    // Add the base layer if one was created
+    if (baseLayer) {
+      viewer.imageryLayers.addImageryProvider(baseLayer);
+    }
+    
+    // Restore non-base layers
+    for (const layer of otherLayers) {
+      viewer.imageryLayers.add(layer);
+    }
+  } catch (error) {
+    console.error("Error setting base map layer:", error);
+    // Add a default layer if there was an error
+    try {
+      viewer.imageryLayers.addImageryProvider(new Cesium.OpenStreetMapImageryProvider({}));
+    } catch (fallbackError) {
+      console.error("Could not add fallback layer:", fallbackError);
+    }
   }
 }

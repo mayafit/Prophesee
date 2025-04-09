@@ -11,7 +11,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Eye, Plus, Loader2, AlertCircle } from "lucide-react";
+import { Eye, Plus, Loader2, AlertCircle, ChevronUp, ChevronDown, Search } from "lucide-react";
 
 interface SearchResultsTableProps {
   results: SarImage[];
@@ -29,6 +29,7 @@ export function SearchResultsTable({
   error 
 }: SearchResultsTableProps) {
   const [addedLayers, setAddedLayers] = useState<Set<number>>(new Set());
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleAddLayer = (image: SarImage, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -42,11 +43,46 @@ export function SearchResultsTable({
     return `${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E`;
   };
 
+  const hasResults = !isLoading && !error && results.length > 0;
+  const resultsCount = results.length;
+
   return (
-    <Card className="absolute bottom-4 left-4 w-[1100px] bg-background/95 backdrop-blur-sm border shadow-lg z-20">
-      <div className="max-h-[400px] overflow-auto">
+    <Card className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg z-20 transition-all duration-300 rounded-none"
+      style={{ 
+        maxHeight: isCollapsed ? '40px' : '300px',
+        transform: isCollapsed ? 'translateY(calc(100% - 40px))' : 'translateY(0)'
+      }}
+    >
+      {/* Header bar with toggle button */}
+      <div 
+        className="flex items-center justify-between p-2 px-4 bg-primary/10 cursor-pointer"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4" />
+          <span className="font-medium">
+            {isLoading ? 'Searching...' : 
+              hasResults ? `Search Results (${resultsCount})` : 
+              'Search Results'}
+          </span>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsCollapsed(!isCollapsed);
+          }}
+          className="p-1 h-6 w-6"
+        >
+          {isCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </div>
+      
+      {/* Table content */}
+      <div className="overflow-auto" style={{ maxHeight: 'calc(300px - 40px)' }}>
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-background z-10">
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Date & Time</TableHead>

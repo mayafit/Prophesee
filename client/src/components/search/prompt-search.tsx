@@ -50,7 +50,7 @@ export function PromptSearch({ onSearch }: PromptSearchProps) {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-[400px] bg-background/95 backdrop-blur-sm border shadow-lg z-20">
+    <Card className="fixed bottom-[44px] right-4 w-[400px] bg-background/95 backdrop-blur-sm border shadow-lg z-20">
       <CardContent className="p-4">
         <div className="flex gap-2">
           <Input

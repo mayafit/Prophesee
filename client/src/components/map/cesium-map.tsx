@@ -128,5 +128,5 @@ export function CesiumMap({
     }
   }, [visibleLayers]);
 
-  return <div ref={containerRef} className="w-full h-full absolute inset-0" />;
+  return <div ref={containerRef} className="w-full h-full absolute inset-0" style={{ paddingBottom: '40px' }} />;
 }

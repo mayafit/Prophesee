@@ -28,22 +28,44 @@ const WMS_SERVICES = [
   {
     name: "NASA GIBS",
     url: "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi",
-    version: "1.3.0"
+    version: "1.3.0",
+    layers: ["MODIS_Terra_CorrectedReflectance_TrueColor", "VIIRS_SNPP_CorrectedReflectance_TrueColor"],
+    description: "NASA Global Imagery Browse Services providing imagery from various NASA satellites."
   },
   {
     name: "USGS Global Visualization Viewer",
     url: "https://glovis.usgs.gov/arcgis/services/visualization/global_visualization_service/MapServer/WMSServer",
-    version: "1.3.0"
+    version: "1.3.0",
+    layers: ["0", "1", "2"],
+    description: "USGS GloVis provides visualization services for satellite imagery and data."
   },
   {
     name: "OpenStreetMap WMS",
     url: "https://ows.terrestris.de/osm/service",
-    version: "1.3.0"
+    version: "1.3.0",
+    layers: ["OSM-WMS"],
+    description: "OpenStreetMap data rendered as WMS layers."
   },
   {
     name: "Natural Earth",
     url: "https://neo.sci.gsfc.nasa.gov/wms/wms",
-    version: "1.1.1"
+    version: "1.1.1",
+    layers: ["BlueMarbleNG-TB", "AVHRR_NDVI", "MOD_LSTD_CLIM_M"],
+    description: "Natural Earth observation imagery from NASA NEO (NASA Earth Observations)."
+  },
+  {
+    name: "Sentinel Hub Public",
+    url: "https://services.sentinel-hub.com/ogc/wms/cd280189-7c51-45a6-ab05-f96a76067710",
+    version: "1.3.0",
+    layers: ["TRUE-COLOR-S2L2A", "FALSE-COLOR-S2L2A", "NDVI", "MOISTURE-INDEX"],
+    description: "Sentinel Hub public instance providing Sentinel-2 imagery with various visualization options."
+  },
+  {
+    name: "Copernicus Land Services",
+    url: "https://image.discomap.eea.europa.eu/arcgis/services/GioLand/GMES_lcu_LandCover/MapServer/WMSServer",
+    version: "1.3.0",
+    layers: ["0", "1", "2"],
+    description: "European Copernicus program land cover services."
   }
 ];
 
@@ -103,47 +125,64 @@ async function getWmsLayers(): Promise<WmsLayer[]> {
 // Function to fetch satellite images from WMS services based on query
 async function fetchWmsImages(query: SarQuery): Promise<any[]> {
   try {
-    // Get available WMS layers
-    const layers = await getWmsLayers();
     const results = [];
+    let nextId = 1000; // Starting ID for WMS images
     
-    // Generate up to 5 random results from available layers
-    const selectedLayers = layers.slice(0, Math.min(layers.length, 5));
-    
-    for (let i = 0; i < selectedLayers.length; i++) {
-      const layer = selectedLayers[i];
-      const service = WMS_SERVICES[Math.floor(Math.random() * WMS_SERVICES.length)];
+    // Use our predefined services and layers instead of dynamically fetching them
+    for (const service of WMS_SERVICES) {
+      // Skip services without defined layers
+      if (!service.layers || service.layers.length === 0) continue;
       
-      // Create a WMS URL for the layer
-      const wmsUrl = `${service.url}?service=WMS&request=GetMap&version=${service.version}&layers=${layer.name}&width=1024&height=1024&format=image/png&transparent=true&styles=&srs=EPSG:4326&bbox=${layer.bbox ? layer.bbox.join(',') : '-180,-90,180,90'}`;
+      // Select 1-2 random layers from each service
+      const numLayersToSelect = Math.min(Math.floor(Math.random() * 2) + 1, service.layers.length);
+      const selectedLayerIndices: number[] = [];
       
-      // Use query's bounding box if available, otherwise use a default or layer's bbox
-      const bbox = query.bbox || layer.bbox || [-180, -90, 180, 90];
-      
-      // Generate a timestamp within the query period
-      const startDate = new Date(query.startDate);
-      const endDate = new Date(query.endDate);
-      const randomTime = new Date(startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime()));
-      
-      // Create a SAR Image compatible object
-      const wmsImage = {
-        id: 1000 + i, // Use high IDs to avoid conflicts with existing SAR images
-        imageId: `wms-${layer.name}-${i}`,
-        timestamp: randomTime.toISOString(),
-        bbox: bbox,
-        url: wmsUrl,
-        metadata: {
-          satellite: "WMS Satellite",
-          source: service.name,
-          layer: layer.title || layer.name,
-          wmsService: service.url
+      while (selectedLayerIndices.length < numLayersToSelect) {
+        const randomIndex = Math.floor(Math.random() * service.layers.length);
+        if (!selectedLayerIndices.includes(randomIndex)) {
+          selectedLayerIndices.push(randomIndex);
         }
-      };
+      }
       
-      results.push(wmsImage);
+      for (const layerIndex of selectedLayerIndices) {
+        const layerName = service.layers[layerIndex];
+        
+        // Use query's bounding box if available, otherwise use a default global bbox
+        const bbox = query.bbox || [-180, -90, 180, 90];
+        
+        // Format the bbox for the WMS request
+        const bboxString = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
+        
+        // Create a WMS URL for the layer
+        const wmsUrl = `${service.url}?service=WMS&request=GetMap&version=${service.version}&layers=${layerName}&width=1024&height=1024&format=image/png&transparent=true&styles=&srs=EPSG:4326&bbox=${bboxString}`;
+        
+        // Generate a timestamp within the query period
+        const startDate = new Date(query.startDate);
+        const endDate = new Date(query.endDate);
+        const randomTime = new Date(startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime()));
+        
+        // Create a SAR Image compatible object
+        const wmsImage = {
+          id: nextId++,
+          imageId: `${service.name.toLowerCase().replace(/\s+/g, '-')}-${layerName}`,
+          timestamp: randomTime.toISOString(),
+          bbox: bbox,
+          url: wmsUrl,
+          metadata: {
+            satellite: service.name,
+            source: service.name,
+            layer: layerName,
+            description: service.description || "WMS satellite imagery",
+            wmsService: service.url
+          }
+        };
+        
+        results.push(wmsImage);
+      }
     }
     
-    return results;
+    // Don't return too many results at once
+    return results.slice(0, query.limit || 10);
   } catch (error) {
     console.error("Error fetching WMS images:", error);
     return [];
@@ -250,7 +289,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // WMS layer search endpoint
+  // WMS layer search endpoint - gets layers from all services
   app.get("/api/wms-layers", async (req, res) => {
     try {
       const layers = await getWmsLayers();
@@ -258,6 +297,75 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching WMS layers:", error);
       res.status(500).json({ message: "Failed to fetch WMS layers" });
+    }
+  });
+  
+  // Get details about all WMS services we support
+  app.get("/api/wms-services", async (req, res) => {
+    try {
+      // Return the list of services but exclude sensitive info like keys if present
+      const serviceInfo = WMS_SERVICES.map(service => ({
+        name: service.name,
+        url: service.url,
+        version: service.version,
+        description: service.description,
+        layerCount: service.layers ? service.layers.length : 0,
+        sampleLayers: service.layers ? service.layers.slice(0, 3) : []
+      }));
+      
+      res.json(serviceInfo);
+    } catch (error) {
+      console.error("Error fetching WMS services:", error);
+      res.status(500).json({ message: "Failed to fetch WMS services" });
+    }
+  });
+  
+  // Connect to a specific WMS supplier and get detailed information
+  app.get("/api/wms-supplier/:id", async (req, res) => {
+    try {
+      const supplierId = parseInt(req.params.id);
+      
+      if (isNaN(supplierId) || supplierId < 0 || supplierId >= WMS_SERVICES.length) {
+        return res.status(404).json({ message: "WMS supplier not found" });
+      }
+      
+      const supplier = WMS_SERVICES[supplierId];
+      
+      // Get layer details from the supplier
+      const url = `${supplier.url}?service=WMS&request=GetCapabilities&version=${supplier.version}`;
+      const response = await fetch(url);
+      const text = await response.text();
+      
+      // Extract service info from the capabilities
+      const serviceInfoMatch = text.match(/<Service[^>]*>[\s\S]*?<\/Service>/);
+      const serviceTitle = serviceInfoMatch ? 
+        (serviceInfoMatch[0].match(/<Title>(.*?)<\/Title>/) || [])[1] || supplier.name : 
+        supplier.name;
+      
+      const serviceAbstract = serviceInfoMatch ? 
+        (serviceInfoMatch[0].match(/<Abstract>(.*?)<\/Abstract>/) || [])[1] || supplier.description : 
+        supplier.description;
+        
+      const contactInfo = serviceInfoMatch ? 
+        (serviceInfoMatch[0].match(/<ContactInformation>(.*?)<\/ContactInformation>/) || [])[1] || "" : 
+        "";
+        
+      // Return detailed supplier information
+      res.json({
+        id: supplierId,
+        name: supplier.name,
+        url: supplier.url,
+        version: supplier.version,
+        title: serviceTitle,
+        abstract: serviceAbstract,
+        contact: contactInfo,
+        description: supplier.description,
+        layers: supplier.layers || [],
+        capabilities: supplier.url
+      });
+    } catch (error) {
+      console.error(`Error fetching WMS supplier details:`, error);
+      res.status(500).json({ message: "Failed to fetch WMS supplier details" });
     }
   });
   

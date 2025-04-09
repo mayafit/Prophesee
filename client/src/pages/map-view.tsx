@@ -4,13 +4,14 @@ import { LayerControl } from "@/components/map/layer-control";
 import { LayersPanel } from "@/components/map/layers-panel";
 import { SarQuery } from "@/components/search/sar-query";
 import { SearchResultsTable } from "@/components/search/search-results-table";
-import { IconButton, Drawer } from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
+import { IconButton, Drawer, Tabs, Tab, Box } from "@mui/material";
+import { Menu as MenuIcon, Satellite as SatelliteIcon, Layers as LayersIcon } from "@mui/icons-material";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { PromptSearch } from "@/components/search/prompt-search";
 import { StatusLog } from "@/components/status/status-log";
+import { WmsSupplierPanel } from "@/components/map/wms-supplier-panel";
 
 interface LogEntry {
   timestamp: Date;
@@ -26,6 +27,7 @@ export default function MapView() {
   const [visibleLayers, setVisibleLayers] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
+  const [drawerTab, setDrawerTab] = useState(0); // 0 = search tab, 1 = WMS supplier tab
 
   const addLogEntry = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     setLogEntries(prev => [...prev, { timestamp: new Date(), message, type }]);
@@ -165,19 +167,90 @@ export default function MapView() {
         onClose={() => setDrawerOpen(false)}
         PaperProps={{
           sx: {
-            width: 320,
+            width: 400,
             backgroundColor: 'rgba(15, 23, 42, 0.95)',
             backdropFilter: 'blur(10px)',
             border: 'none'
           }
         }}
       >
-        <div className="p-6 space-y-6">
-          <LayerControl
-            currentLayer={baseLayer}
-            onLayerChange={setBaseLayer}
-          />
-          <SarQuery onSearch={handleSearch} />
+        <div className="p-4">
+          <Tabs
+            value={drawerTab}
+            onChange={(e, newValue) => setDrawerTab(newValue)}
+            variant="fullWidth"
+            sx={{ 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              mb: 3,
+              '& .MuiTab-root': {
+                color: 'grey.400',
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                }
+              }
+            }}
+          >
+            <Tab 
+              icon={<LayersIcon />} 
+              label="Search" 
+              id="drawer-tab-0" 
+              aria-controls="drawer-tabpanel-0" 
+            />
+            <Tab 
+              icon={<SatelliteIcon />} 
+              label="Suppliers" 
+              id="drawer-tab-1" 
+              aria-controls="drawer-tabpanel-1" 
+            />
+          </Tabs>
+          
+          <div
+            role="tabpanel"
+            hidden={drawerTab !== 0}
+            id="drawer-tabpanel-0"
+            aria-labelledby="drawer-tab-0"
+          >
+            {drawerTab === 0 && (
+              <div className="space-y-6">
+                <LayerControl
+                  currentLayer={baseLayer}
+                  onLayerChange={setBaseLayer}
+                />
+                <SarQuery onSearch={handleSearch} />
+              </div>
+            )}
+          </div>
+          
+          <div
+            role="tabpanel"
+            hidden={drawerTab !== 1}
+            id="drawer-tabpanel-1"
+            aria-labelledby="drawer-tab-1"
+          >
+            {drawerTab === 1 && (
+              <WmsSupplierPanel 
+                onSearchWmsLayers={(supplier, layerName) => {
+                  // Generate a search for this specific supplier and layer
+                  const today = new Date();
+                  const oneMonthAgo = new Date();
+                  oneMonthAgo.setMonth(today.getMonth() - 1);
+                  
+                  addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
+                  
+                  const params: SarQueryType = {
+                    startDate: oneMonthAgo.toISOString(),
+                    endDate: today.toISOString(),
+                    limit: 10
+                  };
+                  
+                  // This will trigger the search
+                  handleSearch(params);
+                  setDrawerOpen(false);
+                }}
+              />
+            )}
+          </div>
         </div>
       </Drawer>
       <PromptSearch onSearch={handleSearch} />

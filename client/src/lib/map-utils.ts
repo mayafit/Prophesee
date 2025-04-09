@@ -143,11 +143,11 @@ export function displayImageFootprints(
       rectangle: {
         coordinates: rectangle,
         material: new Cesium.ColorMaterialProperty(
-          Cesium.Color.fromAlpha(Cesium.Color.BLUE, 0.3)
+          Cesium.Color.fromAlpha(Cesium.Color.BLUE, 0.15)
         ),
         outline: true,
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2,
+        outlineColor: Cesium.Color.fromAlpha(Cesium.Color.WHITE, 0.5),
+        outlineWidth: 1,
       }
     });
   });

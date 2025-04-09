@@ -78,7 +78,7 @@ export function SearchResultsTable({
           {isCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
       </div>
-      
+
       {/* Table content */}
       <div className="overflow-auto" style={{ maxHeight: 'calc(300px - 40px)' }}>
         <Table>
@@ -123,7 +123,7 @@ export function SearchResultsTable({
                 <TableRow 
                   key={image.id}
                   className={`cursor-pointer hover:bg-muted/50 ${
-                    selectedImageId === image.id ? 'bg-primary/10' : ''
+                    selectedImageId === image.id ? 'bg-primary/10 ring-1 ring-primary' : ''
                   }`}
                   onClick={() => onImageSelect(image)}
                 >

@@ -86,16 +86,21 @@ export function CesiumMap({
     }
   }, [selectedImage, activeLayers]);
 
-  // Handle search results changes
+  // Handle selected image footprint display
   useEffect(() => {
-    if (!viewerRef.current || !searchResults?.length) return;
+    if (!viewerRef.current) return;
 
     try {
-      displayImageFootprints(viewerRef.current, searchResults);
+      if (selectedImage) {
+        displayImageFootprints(viewerRef.current, [selectedImage]);
+      } else {
+        // Clear footprints if no image selected
+        viewerRef.current.entities.removeAll();
+      }
     } catch (error) {
-      console.error('Error displaying image footprints:', error);
+      console.error('Error displaying image footprint:', error);
     }
-  }, [searchResults]);
+  }, [selectedImage]);
 
   // Handle base layer changes
   useEffect(() => {

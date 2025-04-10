@@ -142,14 +142,7 @@ export default function MapView() {
         </div>
       </div>
 
-      {activeLayers.length > 0 && (
-        <LayersPanel 
-          activeLayers={activeLayers}
-          onRemoveLayer={handleRemoveLayer}
-          onToggleVisibility={handleToggleLayerVisibility}
-          visibleLayers={visibleLayers}
-        />
-      )}
+      {/* Layer management moved to the toolbar */}
 
       {/* Toolbar */}
       <Toolbar 

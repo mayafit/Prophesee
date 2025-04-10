@@ -35,23 +35,23 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
   return (
     <Card 
       className={cn(
-        "fixed z-20 top-1/2 -translate-y-1/2 transition-all duration-300 shadow-md bg-background/80 backdrop-blur-sm border-0",
-        collapsed ? "right-0 rounded-l-md rounded-r-none" : "right-2 rounded-md"
+        "fixed z-20 top-0 bottom-0 h-full transition-all duration-300 shadow-md bg-background/80 backdrop-blur-sm border-0",
+        collapsed ? "right-0 rounded-l-md rounded-r-none" : "right-2 rounded-md my-2"
       )}
     >
-      <div className="flex flex-col">
+      <div className="flex flex-col h-full py-2">
         {/* Toggle collapse button */}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-6 w-6 m-0.5"
+          className="h-6 w-6 mx-auto mb-4"
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </Button>
 
         {/* Tool buttons */}
-        <div>
+        <div className="flex flex-col space-y-4 items-center flex-1">
           <TooltipProvider>
             {tools.map(tool => (
               <Tooltip key={tool.id} delayDuration={200}>
@@ -60,13 +60,13 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
                     variant={activeTool === tool.id ? "default" : "ghost"}
                     size="icon"
                     className={cn(
-                      "h-6 w-6 m-0.5",
+                      "h-7 w-7",
                       activeTool === tool.id && "bg-primary/20"
                     )}
                     onClick={() => onToolSelect(tool.id === activeTool ? '' : tool.id)}
                     aria-label={tool.label}
                   >
-                    <tool.icon className="h-3 w-3" />
+                    <tool.icon className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="p-1 text-xs">

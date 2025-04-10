@@ -22,8 +22,8 @@ export function ToolPanel({
   return (
     <Card 
       className={cn(
-        "fixed top-1/2 -translate-y-1/2 w-[350px] max-h-[80vh] overflow-auto bg-background/95 backdrop-blur-sm shadow-lg z-10",
-        position === 'right' ? "right-12" : "left-12",
+        "fixed top-0 h-screen w-[350px] max-w-[85vw] overflow-auto bg-background/95 backdrop-blur-sm shadow-lg z-10",
+        position === 'right' ? "right-14" : "left-14",
         className
       )}
     >

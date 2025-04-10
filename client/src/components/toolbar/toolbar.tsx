@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
-  Satellite
+  Satellite,
+  Ruler
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'layers', icon: Layers, label: 'Layers' },
     { id: 'wms', icon: Satellite, label: 'WMS Suppliers' },
+    { id: 'mapTools', icon: Ruler, label: 'Map Tools' },
     { id: 'logs', icon: Terminal, label: 'System Logs' },
     { id: 'info', icon: Info, label: 'Info' },
     { id: 'settings', icon: Settings, label: 'Settings' }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CesiumMap } from "@/components/map/cesium-map";
 import { LayerControl } from "@/components/map/layer-control";
 import { LayersPanel } from "@/components/map/layers-panel";
@@ -18,6 +18,8 @@ import { LogPanel } from "@/components/toolbar/log-panel";
 import { SearchPanel } from "@/components/toolbar/search-panel";
 import { InfoPanel } from "@/components/toolbar/info-panel";
 import { SettingsPanel } from "@/components/toolbar/settings-panel";
+import { MapToolsPanel, type MapTool } from "@/components/toolbar/map-tools-panel";
+import { setupMapTools, activateTool, cleanupMapTools } from "@/lib/map-tools";
 
 interface LogEntry {
   timestamp: Date;
@@ -33,6 +35,7 @@ export default function MapView() {
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [activeMapTool, setActiveMapTool] = useState<MapTool>('none');
 
   const addLogEntry = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     setLogEntries(prev => [...prev, { timestamp: new Date(), message, type }]);
@@ -116,6 +119,36 @@ export default function MapView() {
     });
     addLogEntry(`Toggled visibility for layer ID: ${imageId}`, 'info');
   };
+  
+  // Set up Cesium map tools when map is available
+  const cesiumMapRef = useRef<any>(null);
+  
+  // Initialize map tools
+  const handleMapRef = (viewer: any) => {
+    if (viewer) {
+      cesiumMapRef.current = viewer;
+      setupMapTools(viewer);
+      addLogEntry('Map tools initialized', 'info');
+    }
+  };
+  
+  // Handle map tool changes
+  useEffect(() => {
+    if (cesiumMapRef.current) {
+      activateTool(activeMapTool);
+      
+      if (activeMapTool !== 'none') {
+        addLogEntry(`Activated map tool: ${activeMapTool}`, 'info');
+      }
+    }
+    
+    return () => {
+      // Clean up on component unmount or when changing tools
+      if (activeMapTool === 'none' && cesiumMapRef.current) {
+        cleanupMapTools();
+      }
+    };
+  }, [activeMapTool]);
 
   return (
     <div className="h-screen w-full relative bg-background">
@@ -270,21 +303,25 @@ export default function MapView() {
           <SettingsPanel 
             baseLayer={baseLayer}
             onBaseLayerChange={setBaseLayer}
-            onSearchWmsLayers={(supplier, layerName) => {
-              const today = new Date();
-              const oneMonthAgo = new Date();
-              oneMonthAgo.setMonth(today.getMonth() - 1);
-              
-              addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
-              
-              const params: SarQueryType = {
-                startDate: oneMonthAgo.toISOString(),
-                endDate: today.toISOString(),
-                limit: 10
-              };
-              
-              handleSearch(params);
-              setActiveTool(null);
+          />
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'mapTools' && (
+        <ToolPanel 
+          title="Map Tools" 
+          onClose={() => {
+            setActiveTool(null);
+            setActiveMapTool('none');
+          }}
+        >
+          <MapToolsPanel
+            activeTool={activeMapTool}
+            onSelectTool={(tool) => {
+              setActiveMapTool(tool);
+              if (tool !== 'none') {
+                addLogEntry(`Selected map tool: ${tool}`, 'info');
+              }
             }}
           />
         </ToolPanel>

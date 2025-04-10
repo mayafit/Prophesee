@@ -270,6 +270,22 @@ export default function MapView() {
           <SettingsPanel 
             baseLayer={baseLayer}
             onBaseLayerChange={setBaseLayer}
+            onSearchWmsLayers={(supplier, layerName) => {
+              const today = new Date();
+              const oneMonthAgo = new Date();
+              oneMonthAgo.setMonth(today.getMonth() - 1);
+              
+              addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
+              
+              const params: SarQueryType = {
+                startDate: oneMonthAgo.toISOString(),
+                endDate: today.toISOString(),
+                limit: 10
+              };
+              
+              handleSearch(params);
+              setActiveTool(null);
+            }}
           />
         </ToolPanel>
       )}

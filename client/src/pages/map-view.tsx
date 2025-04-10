@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { CesiumMap } from "@/components/map/cesium-map";
 import { LayerControl } from "@/components/map/layer-control";
-import { LayersPanel } from "@/components/map/layers-panel";
 import { SarQuery } from "@/components/search/sar-query";
 import { SearchResultsTable } from "@/components/search/search-results-table";
-import { IconButton, Drawer, Tabs, Tab, Box } from "@mui/material";
-import { Menu as MenuIcon, Satellite as SatelliteIcon, Layers as LayersIcon } from "@mui/icons-material";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
 import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
-import { StatusLog } from "@/components/status/status-log";
 import { WmsSupplierPanel } from "@/components/map/wms-supplier-panel";
+import { Layers, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Toolbar Components
 import { Toolbar } from "@/components/toolbar/toolbar";
@@ -28,13 +26,11 @@ interface LogEntry {
 
 export default function MapView() {
   const [baseLayer, setBaseLayer] = useState("osm");
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<SarImage | null>(null);
   const [activeLayers, setActiveLayers] = useState<SarImage[]>([]);
   const [visibleLayers, setVisibleLayers] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useState<SarQueryType | null>(null);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
-  const [drawerTab, setDrawerTab] = useState(0); // 0 = search tab, 1 = WMS supplier tab
   const [activeTool, setActiveTool] = useState<string | null>(null);
 
   const addLogEntry = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
@@ -139,20 +135,7 @@ export default function MapView() {
         error={error}
       />
 
-      <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-4 z-10">
-        <IconButton 
-          onClick={() => setDrawerOpen(true)}
-          sx={{ 
-            backgroundColor: 'rgba(30, 41, 59, 0.8)',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: 'rgba(30, 41, 59, 0.9)'
-            }
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-
+      <div className="absolute top-0 right-0 p-4 z-10">
         <div className="mt-1">
           <TechProphetIcon />
         </div>
@@ -188,10 +171,91 @@ export default function MapView() {
       
       {activeTool === 'search' && (
         <ToolPanel 
-          title="Natural Language Search" 
+          title="Search" 
           onClose={() => setActiveTool(null)}
         >
-          <SearchPanel onSearch={handleSearch} />
+          <div className="space-y-4">
+            <SearchPanel onSearch={handleSearch} />
+            <div className="border-t pt-3 mt-2">
+              <h4 className="text-xs font-medium mb-2">Advanced Search</h4>
+              <SarQuery onSearch={handleSearch} />
+            </div>
+          </div>
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'layers' && (
+        <ToolPanel 
+          title="Layers" 
+          onClose={() => setActiveTool(null)}
+        >
+          <div className="space-y-3">
+            <LayerControl
+              currentLayer={baseLayer}
+              onLayerChange={setBaseLayer}
+            />
+            {activeLayers.length > 0 && (
+              <div className="pt-2 border-t mt-2">
+                <h4 className="text-xs font-medium mb-2">Active Layers</h4>
+                <div className="space-y-1 max-h-[300px] overflow-auto pr-1">
+                  {activeLayers.map(layer => (
+                    <div key={layer.id} className="flex items-center justify-between bg-muted/50 rounded-sm p-1">
+                      <div className="truncate text-xs">{layer.imageId}</div>
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5"
+                          onClick={() => handleToggleLayerVisibility(layer.id)}
+                        >
+                          {visibleLayers.has(layer.id) ? 
+                            <Layers className="h-3 w-3" /> : 
+                            <Layers className="h-3 w-3 opacity-40" />
+                          }
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5 text-red-500"
+                          onClick={() => handleRemoveLayer(layer.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ToolPanel>
+      )}
+      
+      {activeTool === 'wms' && (
+        <ToolPanel 
+          title="WMS Suppliers" 
+          onClose={() => setActiveTool(null)}
+        >
+          <WmsSupplierPanel 
+            onSearchWmsLayers={(supplier, layerName) => {
+              // Generate a search for this specific supplier and layer
+              const today = new Date();
+              const oneMonthAgo = new Date();
+              oneMonthAgo.setMonth(today.getMonth() - 1);
+              
+              addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
+              
+              const params: SarQueryType = {
+                startDate: oneMonthAgo.toISOString(),
+                endDate: today.toISOString(),
+                limit: 10
+              };
+              
+              // This will trigger the search
+              handleSearch(params);
+              setActiveTool(null); // Close the panel after search
+            }}
+          />
         </ToolPanel>
       )}
       
@@ -215,99 +279,6 @@ export default function MapView() {
           />
         </ToolPanel>
       )}
-
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 400,
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            backdropFilter: 'blur(10px)',
-            border: 'none'
-          }
-        }}
-      >
-        <div className="p-4">
-          <Tabs
-            value={drawerTab}
-            onChange={(e, newValue) => setDrawerTab(newValue)}
-            variant="fullWidth"
-            sx={{ 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              mb: 3,
-              '& .MuiTab-root': {
-                color: 'grey.400',
-                '&.Mui-selected': {
-                  color: 'primary.main',
-                }
-              }
-            }}
-          >
-            <Tab 
-              icon={<LayersIcon />} 
-              label="Search" 
-              id="drawer-tab-0" 
-              aria-controls="drawer-tabpanel-0" 
-            />
-            <Tab 
-              icon={<SatelliteIcon />} 
-              label="Suppliers" 
-              id="drawer-tab-1" 
-              aria-controls="drawer-tabpanel-1" 
-            />
-          </Tabs>
-          
-          <div
-            role="tabpanel"
-            hidden={drawerTab !== 0}
-            id="drawer-tabpanel-0"
-            aria-labelledby="drawer-tab-0"
-          >
-            {drawerTab === 0 && (
-              <div className="space-y-6">
-                <LayerControl
-                  currentLayer={baseLayer}
-                  onLayerChange={setBaseLayer}
-                />
-                <SarQuery onSearch={handleSearch} />
-              </div>
-            )}
-          </div>
-          
-          <div
-            role="tabpanel"
-            hidden={drawerTab !== 1}
-            id="drawer-tabpanel-1"
-            aria-labelledby="drawer-tab-1"
-          >
-            {drawerTab === 1 && (
-              <WmsSupplierPanel 
-                onSearchWmsLayers={(supplier, layerName) => {
-                  // Generate a search for this specific supplier and layer
-                  const today = new Date();
-                  const oneMonthAgo = new Date();
-                  oneMonthAgo.setMonth(today.getMonth() - 1);
-                  
-                  addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
-                  
-                  const params: SarQueryType = {
-                    startDate: oneMonthAgo.toISOString(),
-                    endDate: today.toISOString(),
-                    limit: 10
-                  };
-                  
-                  // This will trigger the search
-                  handleSearch(params);
-                  setDrawerOpen(false);
-                }}
-              />
-            )}
-          </div>
-        </div>
-      </Drawer>
     </div>
   );
 }

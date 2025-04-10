@@ -1,4 +1,5 @@
-import { Terminal, Search, Settings, Info } from "lucide-react";
+
+import { Files, Search, Play, Terminal, Users, Settings, Grid } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,10 +16,13 @@ interface ToolbarProps {
 
 export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
   const tools = [
-    { id: 'logs', icon: Terminal, label: 'System Logs' },
+    { id: 'files', icon: Files, label: 'Files' },
     { id: 'search', icon: Search, label: 'Search' },
-    { id: 'info', icon: Info, label: 'Info' },
-    { id: 'settings', icon: Settings, label: 'Settings' }
+    { id: 'run', icon: Play, label: 'Run' },
+    { id: 'logs', icon: Terminal, label: 'Console' },
+    { id: 'users', icon: Users, label: 'Multiplayer' },
+    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: 'tools', icon: Grid, label: 'Tools' }
   ];
 
   return (
@@ -32,6 +36,7 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
                   isActive={activeTool === tool.id}
                   onClick={() => onToolSelect(tool.id === activeTool ? '' : tool.id)}
                   tooltip={tool.label}
+                  size="sm"
                 >
                   <tool.icon className="h-4 w-4" />
                   <span>{tool.label}</span>

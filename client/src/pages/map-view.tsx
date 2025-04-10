@@ -158,6 +158,7 @@ export default function MapView() {
         searchResults={searchResults}
         activeLayers={activeLayers}
         visibleLayers={visibleLayers}
+        onMapLoaded={handleMapRef}
       />
 
       {/* Search Results Table - Always visible */}

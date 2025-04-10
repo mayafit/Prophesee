@@ -287,7 +287,7 @@ function measureArea(viewer: Cesium.Viewer, useMetric = true) {
   function calculateAndDisplayArea(positions: Cesium.Cartesian3[], useMetric: boolean) {
     if (positions.length < 3 || !viewer) return;
     
-    // Calculate area using Cesium's built-in function
+    // Calculate area manually using spherical geometry
     const geodesic = new Cesium.EllipsoidGeodesic();
     let area = 0;
     
@@ -296,8 +296,42 @@ function measureArea(viewer: Cesium.Viewer, useMetric = true) {
       Cesium.Cartographic.fromCartesian(position)
     );
     
-    // Use polygon area calculation on cartographics
-    area = Math.abs(Cesium.PolygonGeometry.computeArea(cartographics));
+    // Calculate area using shoelace formula
+    // For simplicity, we'll use planar approximation for small areas
+    if (cartographics.length > 2) {
+      // Create a polygon from the cartographics
+      const coords = cartographics.map(c => [
+        Cesium.Math.toDegrees(c.longitude),
+        Cesium.Math.toDegrees(c.latitude)
+      ]);
+      
+      // Close the polygon if needed
+      if (coords[0][0] !== coords[coords.length - 1][0] || 
+          coords[0][1] !== coords[coords.length - 1][1]) {
+        coords.push([coords[0][0], coords[0][1]]);
+      }
+      
+      // Calculate area using the shoelace formula (Gauss's area formula)
+      let sum = 0;
+      for (let i = 0; i < coords.length - 1; i++) {
+        sum += coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1];
+      }
+      
+      // Get the absolute value of the area
+      const areaInSquareDegrees = Math.abs(sum) / 2;
+      
+      // Convert from square degrees to square meters (approximate)
+      // This is a simplified calculation and not accurate for large areas
+      const latMid = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+      const latRadians = Cesium.Math.toRadians(latMid);
+      
+      // Length of 1 degree of latitude and longitude at this latitude
+      const metersPerDegreeLat = 111132.92 - 559.82 * Math.cos(2 * latRadians) + 1.175 * Math.cos(4 * latRadians);
+      const metersPerDegreeLon = 111412.84 * Math.cos(latRadians) - 93.5 * Math.cos(3 * latRadians);
+      
+      // Calculate approximate area in square meters
+      area = areaInSquareDegrees * metersPerDegreeLat * metersPerDegreeLon;
+    }
     
     // Display area in appropriate units
     let areaText: string;

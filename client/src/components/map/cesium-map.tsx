@@ -10,6 +10,7 @@ interface CesiumMapProps {
   searchResults?: SarImage[];
   activeLayers?: SarImage[];
   visibleLayers?: Set<number>;
+  onMapLoaded?: (viewer: Cesium.Viewer) => void;
 }
 
 export function CesiumMap({ 
@@ -17,7 +18,8 @@ export function CesiumMap({
   selectedImage, 
   searchResults = [],
   activeLayers = [],
-  visibleLayers = new Set()
+  visibleLayers = new Set(),
+  onMapLoaded
 }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
@@ -59,6 +61,11 @@ export function CesiumMap({
       });
 
       viewerRef.current = viewer;
+      
+      // Call the onMapLoaded callback with the viewer
+      if (onMapLoaded) {
+        onMapLoaded(viewer);
+      }
 
       return () => {
         if (viewerRef.current) {

@@ -5,7 +5,7 @@ import { LayersPanel } from "@/components/map/layers-panel";
 import { SarQuery } from "@/components/search/sar-query";
 import { SearchResultsTable } from "@/components/search/search-results-table";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";
-import { type SarImage, type SarQuery as SarQueryType } from "@shared/schema";
+import { type SarImage, type SarQuery as SarQueryType, type SarSupplier } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { WmsSupplierPanel } from "@/components/map/wms-supplier-panel";
 import { Layers, X } from "lucide-react";
@@ -41,9 +41,20 @@ export default function MapView() {
     setLogEntries(prev => [...prev, { timestamp: new Date(), message, type }]);
   };
 
+  // Create a stable query key by extracting only the necessary parts of the search params
+  const getStableQueryKey = () => {
+    if (!searchParams) return ['/api/sar-images', null];
+    
+    // Extract only the parts we need for the query key
+    const { startDate, endDate, limit, bbox, suppliers } = searchParams;
+    return ['/api/sar-images', { startDate, endDate, limit, bbox: bbox ? JSON.stringify(bbox) : undefined, suppliers: suppliers ? JSON.stringify(suppliers) : undefined }];
+  };
+  
   const { data: searchResults = [], isLoading, error } = useQuery<SarImage[]>({
-    queryKey: ['/api/sar-images', searchParams],
+    queryKey: getStableQueryKey(),
     enabled: !!searchParams,
+    // Set stale time to prevent frequent refetches
+    staleTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       if (!searchParams) throw new Error('No search parameters');
 
@@ -57,6 +68,11 @@ export default function MapView() {
 
       if (searchParams.bbox) {
         params.append('bbox', JSON.stringify(searchParams.bbox));
+      }
+      
+      // Include suppliers in the query parameters
+      if (searchParams.suppliers && searchParams.suppliers.length > 0) {
+        params.append('suppliers', JSON.stringify(searchParams.suppliers));
       }
 
       try {
@@ -271,12 +287,23 @@ export default function MapView() {
               const oneMonthAgo = new Date();
               oneMonthAgo.setMonth(today.getMonth() - 1);
               
+              // Map the WMS supplier name to a SarSupplier type
+              let sarSupplier: SarSupplier = "other";
+              if (supplier.toLowerCase().includes('sentinel')) {
+                sarSupplier = "sentinel";
+              } else if (supplier.toLowerCase().includes('landsat')) {
+                sarSupplier = "landsat";
+              } else if (supplier.toLowerCase().includes('planet')) {
+                sarSupplier = "planetscope";
+              }
+              
               addLogEntry(`Searching for imagery from supplier: ${supplier}, layer: ${layerName}`, 'info');
               
               const params: SarQueryType = {
                 startDate: oneMonthAgo.toISOString(),
                 endDate: today.toISOString(),
-                limit: 10
+                limit: 10,
+                suppliers: [sarSupplier]
               };
               
               // This will trigger the search

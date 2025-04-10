@@ -158,6 +158,21 @@ async function getWmsLayers(): Promise<WmsLayer[]> {
   return layers;
 }
 
+// Cache for Capella API to prevent excessive calls
+const capellaCache: {
+  lastQueryTime: number;
+  queryString: string;
+  results: any[];
+  errorCount: number;
+  isRateLimited: boolean;
+} = {
+  lastQueryTime: 0,
+  queryString: '',
+  results: [],
+  errorCount: 0,
+  isRateLimited: false
+};
+
 // Function to fetch images from Capella Space API
 async function fetchCapellaImages(query: SarQuery): Promise<any[]> {
   try {
@@ -172,14 +187,56 @@ async function fetchCapellaImages(query: SarQuery): Promise<any[]> {
     const bbox = query.bbox || [-180, -90, 180, 90];
     const bboxString = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
     
-    // Build the Capella API request URL with query parameters
-    const baseUrl = 'https://api.capellaspace.com/search/v1';
-    const params = new URLSearchParams({
+    // Build query parameters
+    const queryParams = {
       intersects: `BBOX(${bboxString})`,
       datetime: `${query.startDate}/${query.endDate}`,
       limit: query.limit?.toString() || "10"
+    };
+    
+    // Create a query string for cache comparison
+    const queryString = JSON.stringify({
+      bbox: bboxString,
+      datetime: `${query.startDate}/${query.endDate}`,
+      limit: query.limit
     });
     
+    // Check cache first and respect rate limits
+    const now = Date.now();
+    const cacheTime = 5 * 60 * 1000; // 5 minutes
+    const rateLimitTime = 10 * 60 * 1000; // 10 minutes
+    
+    // If we're rate limited, wait until timeout expires
+    if (capellaCache.isRateLimited && (now - capellaCache.lastQueryTime) < rateLimitTime) {
+      console.log("Capella API rate limited, using cached results or empty array");
+      return capellaCache.results;
+    }
+    
+    // If we have a recent cache hit with the same query, return it
+    if (queryString === capellaCache.queryString && 
+        (now - capellaCache.lastQueryTime) < cacheTime) {
+      console.log("Using cached Capella API results");
+      return capellaCache.results;
+    }
+    
+    // Reset rate limit if enough time has passed
+    if (capellaCache.isRateLimited && (now - capellaCache.lastQueryTime) >= rateLimitTime) {
+      console.log("Capella API rate limit reset");
+      capellaCache.isRateLimited = false;
+      capellaCache.errorCount = 0;
+    }
+    
+    // If we've had too many errors, don't keep trying
+    if (capellaCache.errorCount >= 3) {
+      capellaCache.isRateLimited = true;
+      capellaCache.lastQueryTime = now;
+      console.log("Too many Capella API errors, rate limiting");
+      return capellaCache.results;
+    }
+    
+    // Build the Capella API request URL with query parameters
+    const baseUrl = 'https://api.capellaspace.com/search/v1';
+    const params = new URLSearchParams(queryParams);
     const url = `${baseUrl}?${params.toString()}`;
     
     // Make the API request
@@ -190,10 +247,24 @@ async function fetchCapellaImages(query: SarQuery): Promise<any[]> {
       }
     });
     
+    // Update cache timestamp
+    capellaCache.lastQueryTime = now;
+    capellaCache.queryString = queryString;
+    
     if (!response.ok) {
       console.error(`Capella API error: ${response.status} ${response.statusText}`);
-      return [];
+      capellaCache.errorCount++;
+      
+      // If we get 403 or 429, assume rate limiting
+      if (response.status === 403 || response.status === 429) {
+        capellaCache.isRateLimited = true;
+      }
+      
+      return capellaCache.results;
     }
+    
+    // Reset error count on success
+    capellaCache.errorCount = 0;
     
     const data = await response.json() as CapellaApiResponse;
     
@@ -230,10 +301,14 @@ async function fetchCapellaImages(query: SarQuery): Promise<any[]> {
       };
     });
     
+    // Update cache with new results
+    capellaCache.results = results;
+    
     return results;
   } catch (error) {
     console.error("Error fetching Capella images:", error);
-    return [];
+    capellaCache.errorCount++;
+    return capellaCache.results;
   }
 }
 

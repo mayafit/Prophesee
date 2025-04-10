@@ -31,8 +31,8 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
   return (
     <Card 
       className={cn(
-        "fixed z-20 top-1/2 -mt-[100px] transition-all duration-300 shadow-lg bg-background/95 backdrop-blur-sm",
-        collapsed ? "right-0" : "right-4"
+        "fixed z-20 left-4 top-1/2 -translate-y-1/2 transition-all duration-300 shadow-lg bg-background/95 backdrop-blur-sm",
+        collapsed ? "translate-x-[-90%]" : "translate-x-0"
       )}
     >
       <div className="p-1 flex flex-col gap-1">
@@ -43,7 +43,7 @@ export function Toolbar({ onToolSelect, activeTool }: ToolbarProps) {
           className="h-8 w-8"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
 
         {/* Tool buttons */}

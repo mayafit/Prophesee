@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { sarQuerySchema, type InsertSarImage } from "@shared/schema";
+import { sarQuerySchema, type InsertSarImage, type SarSupplier } from "@shared/schema";
 import { ZodError } from "zod";
 import express from "express";
 import path from "path";
@@ -13,6 +13,42 @@ interface SarQuery {
   endDate: string;
   bbox?: number[];
   limit?: number;
+  suppliers?: SarSupplier[];
+}
+
+// Capella Space API integration
+interface CapellaApiResponse {
+  features: Array<{
+    id: string;
+    properties: {
+      datetime: string;
+      sar: {
+        instrument_mode: string;
+        polarization: string;
+        frequency_band: string;
+        center_frequency: number;
+        resolution_range: number;
+        resolution_azimuth: number;
+        looks_range: number;
+        looks_azimuth: number;
+        pixel_spacing_range: number;
+        pixel_spacing_azimuth: number;
+        look_direction: string;
+      };
+      provider: string;
+      license: string;
+    };
+    bbox: number[];
+    assets: {
+      [key: string]: {
+        href: string;
+        type: string;
+        title: string;
+        description: string;
+        roles: string[];
+      };
+    };
+  }>;
 }
 
 // Interface to store WMS capabilities
@@ -120,6 +156,85 @@ async function getWmsLayers(): Promise<WmsLayer[]> {
   }
   
   return layers;
+}
+
+// Function to fetch images from Capella Space API
+async function fetchCapellaImages(query: SarQuery): Promise<any[]> {
+  try {
+    // Check if we have the Capella API key
+    const apiKey = process.env.CAPELLA_API_KEY;
+    if (!apiKey) {
+      console.error("Capella API key not found");
+      return [];
+    }
+
+    // Format the bbox for the API request
+    const bbox = query.bbox || [-180, -90, 180, 90];
+    const bboxString = `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}`;
+    
+    // Build the Capella API request URL with query parameters
+    const baseUrl = 'https://api.capellaspace.com/search/v1';
+    const params = new URLSearchParams({
+      intersects: `BBOX(${bboxString})`,
+      datetime: `${query.startDate}/${query.endDate}`,
+      limit: query.limit?.toString() || "10"
+    });
+    
+    const url = `${baseUrl}?${params.toString()}`;
+    
+    // Make the API request
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Capella API error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+    
+    const data = await response.json() as CapellaApiResponse;
+    
+    // Map the API response to our SarImage format
+    const results = data.features.map((feature, index) => {
+      // Pick the first available asset (often "analytic" or "visual")
+      const assetKeys = Object.keys(feature.assets);
+      const assetKey = assetKeys.find(key => 
+        feature.assets[key].roles?.includes('data') || 
+        feature.assets[key].roles?.includes('visual')
+      ) || assetKeys[0];
+      
+      const asset = feature.assets[assetKey];
+      
+      return {
+        id: 2000 + index, // Use a different ID range from WMS images
+        imageId: feature.id,
+        timestamp: feature.properties.datetime,
+        bbox: feature.bbox,
+        url: asset.href,
+        supplier: "capella",
+        metadata: {
+          satellite: "Capella Space",
+          source: "Capella",
+          description: asset.description || "Capella Space SAR imagery",
+          instrumentMode: feature.properties.sar.instrument_mode,
+          polarization: feature.properties.sar.polarization,
+          frequencyBand: feature.properties.sar.frequency_band,
+          centerFrequency: feature.properties.sar.center_frequency,
+          resolutionRange: feature.properties.sar.resolution_range,
+          resolutionAzimuth: feature.properties.sar.resolution_azimuth,
+          lookDirection: feature.properties.sar.look_direction
+        }
+      };
+    });
+    
+    return results;
+  } catch (error) {
+    console.error("Error fetching Capella images:", error);
+    return [];
+  }
 }
 
 // Function to fetch satellite images from WMS services based on query
@@ -264,26 +379,49 @@ export async function registerRoutes(app: Express) {
         startDate: req.query.startDate,
         endDate: req.query.endDate,
         bbox: req.query.bbox ? JSON.parse(req.query.bbox as string) : undefined,
-        limit: parseInt(req.query.limit as string) || 10
+        limit: parseInt(req.query.limit as string) || 10,
+        suppliers: req.query.suppliers 
+          ? JSON.parse(req.query.suppliers as string) 
+          : ["capella"] // Default to Capella Space only
       });
 
-      // Get regular SAR images
-      const sarImages = await storage.getSarImages(query);
+      let results: any[] = [];
       
-      // Get satellite images from free WMS service
+      // Get regular SAR images from storage
+      const sarImages = await storage.getSarImages(query);
+      results = [...sarImages];
+      
+      // Get images from selected suppliers
       try {
-        const wmsImages = await fetchWmsImages(query);
-        // Return combined results
-        res.json([...sarImages, ...wmsImages]);
-      } catch (wmsError) {
-        console.error("Error fetching WMS images:", wmsError);
-        // Return just the SAR images if WMS fails
-        res.json(sarImages);
+        // Check if Capella Space is selected
+        if (query.suppliers?.includes("capella")) {
+          const capellaImages = await fetchCapellaImages(query);
+          results = [...results, ...capellaImages];
+        }
+        
+        // Get satellite images from other suppliers if they're selected
+        const nonCapellaSuppliers = query.suppliers?.filter(s => s !== "capella");
+        if (nonCapellaSuppliers && nonCapellaSuppliers.length > 0) {
+          const wmsImages = await fetchWmsImages(query);
+          // Only include images from selected suppliers
+          const filteredWmsImages = wmsImages.filter(img => {
+            // Match supplier name by comparing with the source metadata
+            const supplier = img.metadata?.source?.toLowerCase();
+            return nonCapellaSuppliers.some(s => supplier?.includes(s));
+          });
+          results = [...results, ...filteredWmsImages];
+        }
+      } catch (error) {
+        console.error("Error fetching supplier images:", error);
       }
+      
+      // Return combined results, limited to the requested amount
+      res.json(results.slice(0, query.limit));
     } catch (error) {
       if (error instanceof ZodError) {
         res.status(400).json({ message: "Invalid query parameters", errors: error.errors });
       } else {
+        console.error("Error processing request:", error);
         res.status(500).json({ message: "Failed to fetch SAR images" });
       }
     }

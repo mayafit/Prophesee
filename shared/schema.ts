@@ -9,13 +9,27 @@ export const sarImages = pgTable("sar_images", {
   bbox: jsonb("bbox").$type<[number, number, number, number]>().notNull(),
   metadata: jsonb("metadata").$type<Record<string, any>>().notNull(),
   url: text("url").notNull(),
+  supplier: text("supplier").notNull().default("capella"),
 });
+
+// Define available supplier types
+export const supplierEnum = z.enum([
+  "capella", 
+  "sentinel", 
+  "planetscope", 
+  "landsat", 
+  "iceye", 
+  "other"
+]);
+
+export type SarSupplier = z.infer<typeof supplierEnum>;
 
 export const sarQuerySchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
-  limit: z.number().min(1).max(100).default(10)
+  limit: z.number().min(1).max(100).default(10),
+  suppliers: z.array(supplierEnum).default(["capella"])
 });
 
 export const insertSarImageSchema = createInsertSchema(sarImages);

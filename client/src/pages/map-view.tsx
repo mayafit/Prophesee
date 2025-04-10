@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CesiumMap } from "@/components/map/cesium-map";
 import { LayerControl } from "@/components/map/layer-control";
+import { LayersPanel } from "@/components/map/layers-panel";
 import { SarQuery } from "@/components/search/sar-query";
 import { SearchResultsTable } from "@/components/search/search-results-table";
 import { TechProphetIcon } from "@/components/brand/tech-prophet-icon";

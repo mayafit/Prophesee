@@ -5,88 +5,93 @@ export interface IStorage {
   insertSarImage(image: InsertSarImage): Promise<SarImage>;
 }
 
-export class MemStorage implements IStorage {
-  private sarImages: Map<number, SarImage>;
-  private currentId: number;
+export class SentinelStorage implements IStorage {
+  private apiKey: string;
+  private baseUrl: string;
 
   constructor() {
-    this.sarImages = new Map();
-    this.currentId = 1;
-
-    // Add test data with dates in a reasonable range
-    this.insertSarImage({
-      imageId: "SAR_001",
-      timestamp: new Date("2024-03-10T10:30:00Z").toISOString(),
-      bbox: [10.5, 45.5, 12.5, 47.5],
-      metadata: { satellite: "Capella-1" },
-      url: "https://example.com/sar_001.tif"
-    });
-
-    this.insertSarImage({
-      imageId: "SAR_002",
-      timestamp: new Date("2024-03-11T14:20:00Z").toISOString(),
-      bbox: [-74.006, 40.7128, -73.95, 40.7528],
-      metadata: { satellite: "Capella-2" },
-      url: "https://example.com/sar_002.tif"
-    });
-
-    this.insertSarImage({
-      imageId: "SAR_003",
-      timestamp: new Date("2024-03-11T08:15:00Z").toISOString(),
-      bbox: [-118.2437, 34.0522, -118.2037, 34.0922],
-      metadata: { satellite: "Capella-1" },
-      url: "https://example.com/sar_003.tif"
-    });
+    this.apiKey = process.env.NASA_API_KEY || '';
+    this.baseUrl = 'https://cmr.earthdata.nasa.gov/search/granules.json';
   }
 
   async getSarImages(query: SarQuery): Promise<SarImage[]> {
-    console.log("Searching SAR images with query:", query);
+    console.log("=== NASA API Request Start ===");
+    console.log("Query parameters:", JSON.stringify(query, null, 2));
 
-    const startDate = new Date(query.startDate);
-    const endDate = new Date(query.endDate);
+    try {
+      // Format dates for NASA CMR API
+      const startDate = new Date(query.startDate).toISOString();
+      const endDate = new Date(query.endDate).toISOString();
 
-    console.log("Date range:", {
-      start: startDate.toISOString(),
-      end: endDate.toISOString()
-    });
-
-    const images = Array.from(this.sarImages.values());
-    const filteredImages = images.filter(img => {
-      const imgDate = new Date(img.timestamp);
-      console.log("Comparing image date:", {
-        imageId: img.imageId,
-        imageDate: imgDate.toISOString(),
-        isAfterStart: imgDate >= startDate,
-        isBeforeEnd: imgDate <= endDate
+      // Construct the query parameters
+      const params = new URLSearchParams({
+        collection_concept_id: 'C1234567890-SENTINEL1A',
+        temporal: `${startDate},${endDate}`,
+        page_size: query.limit.toString(),
+        sort_key: '-start_date',
+        provider: 'ASF'
       });
 
-      // Check date range
-      if (imgDate < startDate || imgDate > endDate) {
-        return false;
-      }
-
-      // Check bounding box if provided
+      // Add spatial query if bbox is provided
       if (query.bbox) {
         const [minX, minY, maxX, maxY] = query.bbox;
-        const [imgMinX, imgMinY, imgMaxX, imgMaxY] = img.bbox;
-
-        if (minX > imgMaxX || maxX < imgMinX) return false;
-        if (minY > imgMaxY || maxY < imgMinY) return false;
+        params.append('bounding_box', `${minX},${minY},${maxX},${maxY}`);
       }
 
-      return true;
-    });
+      const url = `${this.baseUrl}?${params.toString()}`;
+      console.log("Making NASA API request to:", url);
+      console.log("Using API key:", this.apiKey ? "Present" : "Missing");
 
-    console.log("Found matching images:", filteredImages.length);
-    return filteredImages.slice(0, query.limit);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+      
+      console.log("NASA API Response Status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("NASA API Error Response:", errorText);
+        throw new Error(`NASA API error: ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("NASA API Response Data:", JSON.stringify(data, null, 2));
+
+      // Transform NASA CMR response to our SarImage format
+      const transformedResults = data.feed.entry.map((item: any) => {
+        const bbox = item.boxes?.[0]?.split(' ').map(Number) || [0, 0, 0, 0];
+        return {
+          id: parseInt(item.id.split('-').pop()),
+          imageId: item.id,
+          timestamp: item.time_start,
+          bbox: bbox,
+          metadata: {
+            satellite: 'Sentinel-1A',
+            source: 'NASA',
+            instrument: item.instrument || 'SAR',
+            provider: 'ASF'
+          },
+          url: item.links?.find((link: any) => link.rel === 'data')?.href || ''
+        };
+      });
+
+      console.log("=== NASA API Request End ===");
+      console.log("Transformed Results:", JSON.stringify(transformedResults, null, 2));
+      
+      return transformedResults;
+    } catch (error) {
+      console.error("=== NASA API Request Failed ===");
+      console.error("Error details:", error);
+      throw error;
+    }
   }
 
   async insertSarImage(image: InsertSarImage): Promise<SarImage> {
-    const id = this.currentId++;
-    const sarImage: SarImage = { ...image, id };
-    this.sarImages.set(id, sarImage);
-    return sarImage;
+    throw new Error("Inserting images is not supported with NASA storage");
   }
 }
 
-export const storage = new MemStorage();
+// Use SentinelStorage as the default storage
+export const storage = new SentinelStorage();

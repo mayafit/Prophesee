@@ -1,0 +1,19 @@
+- A single page application , Based on Cesium , latest React . Module Federation .
+- Module Federation -Each distinct capability should be developed in its own module . All module Frontend should be based on WebKit
+- see HLD.drawio
+- based on the WebKit Bootstrapping (Fork it ) base : https://github.com/mayafit/WebKit . WebKit is used a
+- Service Oriented design (see HLD.drawio) . 
+- Backend services writtent in C# or Node
+- Database per service (https://microservices.io/patterns/data/database-per-service.html) 
+- Data Distribution ( MessageBrokerage ) using RabbitMQ
+- B2B based on gRPC
+- C2B based on REST , WebSocket
+- Services are Stateless by default
+- Secrets are kept in Vault
+- application Configuration is handled using environment variables.(https://microservices.io/patterns/externalized-configuration.html)
+- deployment is helm-based
+- OpenTelemetry by design
+- Logging by best pracices
+- Consul is used for service discovery
+- implement distributed tracing
+

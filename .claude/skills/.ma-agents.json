@@ -1,0 +1,161 @@
+{
+  "manifestVersion": "1.0.0",
+  "agent": "claude-code",
+  "scope": "project",
+  "skills": {
+    "cmake-best-practices": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.047Z",
+      "updatedAt": "2026-02-22T10:39:22.047Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "code-documentation": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.173Z",
+      "updatedAt": "2026-02-22T10:39:22.173Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "code-review": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.564Z",
+      "updatedAt": "2026-02-22T10:39:22.564Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "commit-message": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.602Z",
+      "updatedAt": "2026-02-22T10:39:22.602Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "cpp-concurrency-safety": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.727Z",
+      "updatedAt": "2026-02-22T10:39:22.727Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "cpp-const-correctness": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.798Z",
+      "updatedAt": "2026-02-22T10:39:22.798Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "cpp-memory-handling": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:22.969Z",
+      "updatedAt": "2026-02-22T10:39:22.969Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "cpp-modern-composition": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:23.351Z",
+      "updatedAt": "2026-02-22T10:39:23.351Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "cpp-robust-interfaces": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:23.636Z",
+      "updatedAt": "2026-02-22T10:39:23.636Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "create-hardened-docker-skill": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:23.968Z",
+      "updatedAt": "2026-02-22T10:39:23.968Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "git-workflow-skill": {
+      "version": "2.1.0",
+      "installedAt": "2026-02-22T10:39:24.008Z",
+      "updatedAt": "2026-02-22T10:39:24.008Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "js-ts-dependency-mgmt": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.093Z",
+      "updatedAt": "2026-02-22T10:39:24.093Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "js-ts-security-skill": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.146Z",
+      "updatedAt": "2026-02-22T10:39:24.146Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "logging-best-practices": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.306Z",
+      "updatedAt": "2026-02-22T10:39:24.306Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "opentelemetry-best-practices": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.538Z",
+      "updatedAt": "2026-02-22T10:39:24.538Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "python-dependency-mgmt": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.590Z",
+      "updatedAt": "2026-02-22T10:39:24.590Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "python-security-skill": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.744Z",
+      "updatedAt": "2026-02-22T10:39:24.744Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "skill-creator": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.821Z",
+      "updatedAt": "2026-02-22T10:39:24.821Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "test-accompanied-development": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:24.928Z",
+      "updatedAt": "2026-02-22T10:39:24.928Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "test-generator": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:25.050Z",
+      "updatedAt": "2026-02-22T10:39:25.050Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "vercel-react-best-practices": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:25.134Z",
+      "updatedAt": "2026-02-22T10:39:25.134Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    },
+    "verify-hardened-docker-skill": {
+      "version": "1.0.0",
+      "installedAt": "2026-02-22T10:39:25.285Z",
+      "updatedAt": "2026-02-22T10:39:25.285Z",
+      "installerVersion": "2.4.0",
+      "agentVersion": "1.0.0"
+    }
+  }
+}

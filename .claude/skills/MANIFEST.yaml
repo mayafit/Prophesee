@@ -1,0 +1,175 @@
+# skills/MANIFEST.yaml
+
+skills:
+  - id: cmake-best-practices
+    file: skills/cmake-best-practices/SKILL.md
+    description: Enforce target-based, property-oriented CMake patterns (CMake 3.0+).
+    applies_when:
+      - creating or modifying CMakeLists.txt files
+      - managing C++ project dependencies via CMake
+      - defining C++ build configurations
+    always_load: true
+
+  - id: code-documentation
+    file: skills/code-documentation/SKILL.md
+    description: Standardize file headers and method documentation across C++, C#, JS, TS, and Python.
+    applies_when:
+      - creating or modifying source code files
+      - defining new functions, methods, or classes
+      - refactoring code logic
+      - documenting APIs
+    always_load: true
+
+  - id: code-review
+    file: skills/code-review/SKILL.md
+    description: Performs comprehensive code reviews with best practices
+
+  - id: commit-message
+    file: skills/commit-message/SKILL.md
+    description: Generates conventional commit messages from code changes
+
+  - id: cpp-concurrency-safety
+    file: skills/cpp-concurrency-safety/SKILL.md
+    description: Enforce safe multi-threading patterns using RAII locking and task-based parallelism (C++14+).
+    applies_when:
+      - working with C++ threads
+      - using C++ mutexes or locking primitives
+      - performing C++ asynchronous operations
+      - designing multi-threaded C++ systems
+
+  - id: cpp-const-correctness
+    file: skills/cpp-const-correctness/SKILL.md
+    description: Enforce immutability-by-default and push logic to compile-time using constexpr (C++14+).
+    applies_when:
+      - declaring C++ variables
+      - defining C++ member functions
+      - performing C++ compile-time calculations
+      - optimizing C++ logic
+
+  - id: cpp-memory-handling
+    file: skills/cpp-memory-handling/SKILL.md
+    description: Enforces Modern C++ practices (RAII, Smart Pointers) to prevent memory leaks, dangling pointers, and buffer overflows.
+    applies_when:
+      - writing c++ code
+      - modifying memory-intensive C++ logic
+      - debugging memory leaks in c++
+      - implementing new c++ classes
+
+  - id: cpp-modern-composition
+    file: skills/cpp-modern-composition/SKILL.md
+    description: Replace legacy C patterns with STL, Ranges, and modern C++ abstractions (C++14+).
+    applies_when:
+      - writing C++ logic or algorithms
+      - performing C++ refactoring
+      - handling C++ data transformations
+      - working with C++ collections
+    always_load: true
+
+  - id: cpp-robust-interfaces
+    file: skills/cpp-robust-interfaces/SKILL.md
+    description: Enforce contract-based design and strong typing in C++ interfaces (C++14+).
+    applies_when:
+      - creating or modifying C++ header files
+      - designing C++ function signatures
+      - defining C++ APIs or public interfaces
+
+  - id: create-hardened-docker-skill
+    file: skills/create-hardened-docker-skill/SKILL.md
+    description: Creates production-ready hardened Docker configurations following CIS, OWASP, and NIST standards
+
+  - id: git-workflow-skill
+    file: skills/git-workflow-skill/SKILL.md
+    description: MANDATORY worktree-based workflow for ALL file-changing activities. Enforces isolated feature branches, conventional commits, and PR-based merging.
+    applies_when:
+      - committing changes
+      - creating branches or PRs
+      - any code writing or modification task
+    always_load: true
+
+  - id: js-ts-dependency-mgmt
+    file: skills/js-ts-dependency-mgmt/SKILL.md
+    description: Standardize package management and security across NPM, Yarn, and PNPM.
+    applies_when:
+      - managing JavaScript or TypeScript project dependencies
+      - configuring package.json, npmrc, or lockfiles
+      - updating NPM/Yarn/PNPM packages
+      - auditing JS/TS supply chain security
+    always_load: true
+
+  - id: js-ts-security-skill
+    file: skills/js-ts-security-skill/SKILL.md
+    description: Verify security of JavaScript and TypeScript codebases against OWASP Top 10 2025 standards
+    applies_when:
+      - writing or reviewing security-critical code
+      - analyzing third-party dependencies
+      - performing security audits
+
+  - id: logging-best-practices
+    file: skills/logging-best-practices/SKILL.md
+    description: Standardizes structured logging across Backend, Frontend, Realtime, and Algorithmic domains with mandatory exception handling.
+    applies_when:
+      - writing new service classes
+      - reviewing or modifying existing log statements
+      - adding error handling
+
+  - id: opentelemetry-best-practices
+    file: skills/opentelemetry-best-practices/SKILL.md
+    description: Standardizes distributed tracing, metrics, and semantic conventions for high-quality system observability.
+    applies_when:
+      - implementing api endpoints
+      - handling distributed requests
+      - optimizing performance
+      - adding monitoring
+
+  - id: python-dependency-mgmt
+    file: skills/python-dependency-mgmt/SKILL.md
+    description: Standardize Python dependency handling using uv and pip (requirements.txt).
+    applies_when:
+      - managing Python project dependencies
+      - configuring Python build systems
+      - updating requirements.txt or uv.lock
+      - setting up Python development environments
+    always_load: true
+
+  - id: python-security-skill
+    file: skills/python-security-skill/SKILL.md
+    description: Enforce secure Python coding standards following OWASP Top 10 2025.
+    applies_when:
+      - writing or reviewing Python code
+      - managing Python dependencies
+      - configuring Python application environments
+      - handling sensitive data in Python
+    always_load: true
+
+  - id: skill-creator
+    file: skills/skill-creator/SKILL.md
+    description: Guide for creating effective skills that extend Claude's capabilities with specialized knowledge, workflows, and tool integrations
+
+  - id: test-accompanied-development
+    file: skills/test-accompanied-development/SKILL.md
+    description: Enforces writing unit tests for every new public method created by the agent.
+    applies_when:
+      - writing or reviewing public APIs
+      - adding new public methods to a class
+      - code review tasks
+
+  - id: test-generator
+    file: skills/test-generator/SKILL.md
+    description: Generates comprehensive unit and integration tests
+    applies_when:
+      - creating new code files
+      - adding complex logic
+      - refactoring existing code
+
+  - id: vercel-react-best-practices
+    file: skills/vercel-react-best-practices/SKILL.md
+    description: Performance optimization framework for React and Next.js projects with 57 actionable rules across 8 categories
+    applies_when:
+      - working on React or Next.js components
+      - optimizing page performance
+      - reviewing frontend code architecture
+
+  - id: verify-hardened-docker-skill
+    file: skills/verify-hardened-docker-skill/SKILL.md
+    description: Comprehensive security verification for Docker configurations against CIS, OWASP, and NIST standards
+
